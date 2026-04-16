@@ -8,9 +8,15 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "icon": "./public/Cosmozpaylogo.jpeg",
     "android": {
       "package": "com.cosmozpay.app",
       "versionCode": 1
+      ,
+      "adaptiveIcon": {
+        "foregroundImage": "./public/Cosmozpaylogo.jpeg",
+        "backgroundColor": "#111111"
+      }
     },
     "extra": {
       "eas": {

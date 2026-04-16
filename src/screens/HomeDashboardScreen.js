@@ -149,6 +149,8 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
           </View>
 
           <View style={styles.balanceCard}>
+            <View style={styles.balancePatternTopRight} />
+            <View style={styles.balancePatternBottomLeft} />
             <View style={styles.balanceInner}>
               <Text style={styles.totalLabel}>Total Wallet Balance</Text>
               <Text style={styles.balanceAmount}>NGN 15,982.62</Text>

@@ -19,6 +19,7 @@ export const darkPalette = {
   bottomBar: '#1F1F1F',
   icon: '#F8F7FF',
   iconOnPrimary: '#FFFFFF',
+  pattern: 'rgba(255,255,255,0.04)',
 };
 
 export const lightPalette = {
@@ -40,6 +41,7 @@ export const lightPalette = {
   icon: '#333333',
   iconOnPrimary: '#FFFFFF',
   accent: '#7C3AED',
+  pattern: 'rgba(0,0,0,0.06)',
 };
 
 export function getPalette(mode = 'dark') {
@@ -100,7 +102,7 @@ export const splashScreenStyles = StyleSheet.create({
   logoWrapper: {
     alignItems: 'center',
     backgroundColor: '#1F1F1F',
-    borderRadius: 32,
+    borderRadius: 18,
     height: 110,
     justifyContent: 'center',
     marginBottom: 24,
@@ -137,7 +139,7 @@ export const splashScreenStyles = StyleSheet.create({
   },
   loaderDot: {
     backgroundColor: '#9CA3AF',
-    borderRadius: 8,
+    borderRadius: 6,
     height: 12,
     width: 12,
     opacity: 0.9,
@@ -175,7 +177,7 @@ export function getHomeDashboardStyles(palette) {
     profileAvatar: {
       alignItems: 'center',
       backgroundColor: palette.surfaceRaised,
-      borderRadius: 22,
+      borderRadius: 12,
       height: 44,
       justifyContent: 'center',
       overflow: 'hidden',
@@ -214,7 +216,7 @@ export function getHomeDashboardStyles(palette) {
     headerIconButtonPrimary: {
       alignItems: 'center',
       backgroundColor: palette.surfaceRaised,
-      borderRadius: 14,
+      borderRadius: 10,
       height: 40,
       justifyContent: 'center',
       marginLeft: 4,
@@ -226,10 +228,11 @@ export function getHomeDashboardStyles(palette) {
     ========================= */
 
     balanceCard: {
-      borderRadius: 28,
+      borderRadius: 12,
       marginBottom: 24,
       backgroundColor: palette.surfaceRaised,
       overflow: 'hidden',
+      position: 'relative',
     },
 
     balanceGradient: {
@@ -238,8 +241,39 @@ export function getHomeDashboardStyles(palette) {
 
     balanceInner: {
       backgroundColor: palette.surface,
-      borderRadius: 28,
+      borderRadius: 12,
       padding: 18,
+      position: 'relative',
+      zIndex: 1,
+    },
+
+    /* decorative pattern shapes inside the balance card */
+    balancePatternTopRight: {
+      position: 'absolute',
+      top: -18,
+      right: -18,
+      width: 110,
+      height: 110,
+      borderRadius: 56,
+      backgroundColor: palette.pattern,
+      opacity: 1,
+      transform: [{ scale: 1 }],
+      zIndex: 0,
+      pointerEvents: 'none',
+    },
+
+    balancePatternBottomLeft: {
+      position: 'absolute',
+      left: -24,
+      bottom: -22,
+      width: 160,
+      height: 80,
+      borderTopLeftRadius: 80,
+      borderTopRightRadius: 80,
+      backgroundColor: palette.pattern,
+      opacity: 1,
+      zIndex: 0,
+      pointerEvents: 'none',
     },
 
     totalLabel: {
@@ -268,7 +302,7 @@ export function getHomeDashboardStyles(palette) {
     miniBalanceBox: {
       flex: 1,
       backgroundColor: palette.surface,
-      borderRadius: 18,
+      borderRadius: 10,
       padding: 14,
       borderWidth: palette.surface === '#FFFFFF' ? 1 : 0,
       borderColor: palette.border,
@@ -296,7 +330,7 @@ export function getHomeDashboardStyles(palette) {
       flex: 1,
       alignItems: 'center',
       backgroundColor: palette.text,
-      borderRadius: 18,
+      borderRadius: 10,
       justifyContent: 'center',
       minHeight: 44,
       paddingHorizontal: 16,
@@ -314,7 +348,7 @@ export function getHomeDashboardStyles(palette) {
       backgroundColor: palette.surface,
       borderColor: palette.border,
       borderWidth: 1,
-      borderRadius: 18,
+      borderRadius: 10,
       justifyContent: 'center',
       minHeight: 44,
       paddingHorizontal: 16,
@@ -341,7 +375,7 @@ export function getHomeDashboardStyles(palette) {
     actionButton: {
       alignItems: 'center',
       backgroundColor: palette.surface,
-      borderRadius: 14,
+      borderRadius: 10,
       flexDirection: 'row',
       minHeight: 64,
       paddingHorizontal: 16,
@@ -351,7 +385,7 @@ export function getHomeDashboardStyles(palette) {
     actionIconWrap: {
       alignItems: 'center',
       backgroundColor: palette.surfaceRaised,
-      borderRadius: 14,
+      borderRadius: 10,
       height: 30,
       justifyContent: 'center',
       marginRight: 12,
@@ -406,7 +440,7 @@ export function getHomeDashboardStyles(palette) {
 
     serviceIconWrap: {
       alignItems: 'center',
-      borderRadius: 12,
+      borderRadius: 8,
       height: 44,
       justifyContent: 'center',
       marginBottom: 8,
@@ -434,7 +468,7 @@ export function getHomeDashboardStyles(palette) {
 
     transactionsCard: {
       backgroundColor: palette.surface,
-      borderRadius: 12,
+      borderRadius: 10,
       paddingHorizontal: 18,
       paddingVertical: 8,
     },
@@ -455,7 +489,7 @@ export function getHomeDashboardStyles(palette) {
     transactionIconWrap: {
       alignItems: 'center',
       backgroundColor: palette.primaryMuted,
-      borderRadius: 22,
+      borderRadius: 12,
       height: 44,
       justifyContent: 'center',
       width: 44,
