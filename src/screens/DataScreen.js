@@ -26,7 +26,7 @@ const operators = [
     localLogo: require('../../public/Glo-logo.png'),
   },
   {
-    key: '9mobile',
+    key: 'ninemobile',
     label: '9mobile',
     color: '#7ED321',
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/9mobile_logo.svg/512px-9mobile_logo.svg.png',
@@ -36,14 +36,18 @@ const operators = [
   { key: 'airtel_awuf', label: 'Airtel Awuf', color: '#E60000', localLogo: require('../../public/airtel-logo.png') },
 ];
 
-export default function DataScreen({ user, onBack, themeMode = 'dark' }) {
+export default function DataScreen({ user, onBack, themeMode = 'dark', onOpenOperator }) {
   const palette = getPalette(themeMode);
 
   const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
 
   function renderOperator({ item }) {
     return (
-      <TouchableOpacity style={[styles.opTile, { backgroundColor: palette.surface }]} activeOpacity={0.85}>
+      <TouchableOpacity
+        style={[styles.opTile, { backgroundColor: palette.surface }]}
+        activeOpacity={0.85}
+        onPress={() => onOpenOperator?.(item.key)}
+      >
         <View style={styles.opIcon}>
           {item.localLogo ? (
             <Image source={item.localLogo} style={styles.opIconImage} />

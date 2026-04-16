@@ -1,53 +1,75 @@
 import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { getPalette } from '../styles/GlobalStyles';
-import { Animated, Image, Text, View } from 'react-native';
+import { Animated, Image, Text, View, SafeAreaView } from 'react-native';
 import { splashScreenStyles as styles } from '../styles/GlobalStyles';
 
-export default function SplashScreen() {
-  const pulse = useRef(new Animated.Value(0)).current;
+export default function SplashScreen({ themeMode = 'light' }) {
+  const rotate = useRef(new Animated.Value(0)).current;
+  const pulse1 = useRef(new Animated.Value(0)).current;
+  const pulse2 = useRef(new Animated.Value(0)).current;
+  const pulse3 = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.loop(
+      Animated.timing(rotate, {
+        toValue: 1,
+        duration: 2200,
+        useNativeDriver: true,
+      }),
+    ).start();
+
+    const loopPulse = (anim, delay) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, { toValue: 1, duration: 420, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0.35, duration: 420, useNativeDriver: true }),
+          Animated.delay(delay),
+        ]),
+      ).start();
+    };
+
+    loopPulse(pulse1, 0);
+    loopPulse(pulse2, 140);
+    loopPulse(pulse3, 280);
+
+    // subtle pulsing for the logo
+    Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 900,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulse, {
-          toValue: 0,
-          duration: 900,
-          useNativeDriver: true,
-        }),
+        Animated.timing(logoScale, { toValue: 1.06, duration: 700, useNativeDriver: true }),
+        Animated.timing(logoScale, { toValue: 0.98, duration: 700, useNativeDriver: true }),
       ]),
     ).start();
-  }, [pulse]);
+  }, [rotate, pulse1, pulse2, pulse3]);
 
-  const scale = pulse.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 1.08],
-  });
-
-  const palette = getPalette('dark');
+  const rotation = rotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const palette = getPalette(themeMode);
 
   return (
-    <View style={styles.screen}>
-      <StatusBar style="light" backgroundColor={palette.bottomBar} translucent={false} />
-      <Animated.View style={[styles.logoWrapper, { transform: [{ scale }] }]}> 
-        <Image
-          source={require('../../public/Cosmozpaylogo.jpeg')}
-          style={styles.logoImage}
-          resizeMode="contain"
-        />
-      </Animated.View>
-      <Text style={styles.brandText}>CosmozPay</Text>
-      <Text style={styles.tagline}>Powering secure payments with premium purple design.</Text>
-      <View style={styles.loaderRow}>
-        <View style={styles.loaderDot} />
-        <View style={styles.loaderDot} />
-        <View style={styles.loaderDot} />
+    <SafeAreaView style={[styles.screen, { backgroundColor: '#FFFFFF' }]}> 
+      <StatusBar style="dark" backgroundColor="#FFFFFF" translucent={false} />
+
+      <View style={styles.centerArea}>
+        <Animated.View style={[styles.logoWrapper, { transform: [{ scale: logoScale }], backgroundColor: '#FFFFFF', shadowColor: 'rgba(124,58,237,0.16)' }]}> 
+          <Image
+            source={require('../../public/CosmozPaylogo2.jpeg')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+        </Animated.View>
       </View>
-    </View>
+
+      <View style={styles.bottomArea}>
+        <Text style={[styles.brandText, { color: '#111827' }]}>CosmozPay</Text>
+        <Text style={[styles.tagline, { color: '#6B7280' }]}>Pay bills with ease</Text>
+
+        <View style={styles.loaderRow}>
+          <Animated.View style={[styles.pulseDot, { opacity: pulse1, backgroundColor: '#111827' }]} />
+          <Animated.View style={[styles.pulseDot, { opacity: pulse2, backgroundColor: '#111827' }]} />
+          <Animated.View style={[styles.pulseDot, { opacity: pulse3, backgroundColor: '#111827' }]} />
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }

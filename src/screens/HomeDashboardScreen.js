@@ -75,9 +75,9 @@ function ServiceTile({ label, color, icon, palette, styles, onPress }) {
 function TransactionRow({ title, subtitle, amount, positive, icon, palette, styles }) {
   return (
     <View style={styles.transactionRow}>
-      <View style={styles.transactionLeft}>
+        <View style={styles.transactionLeft}>
         <View style={styles.transactionIconWrap}>
-          <Feather color={palette.primary} name={icon} size={16} />
+          <Feather color={palette.icon} name={icon} size={16} />
         </View>
         <View>
           <Text style={styles.transactionTitle}>{title}</Text>
@@ -150,6 +150,7 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
 
           <View style={styles.balanceCard}>
             <View style={styles.balancePatternTopRight} />
+            <View style={styles.balancePatternCurve} />
             <View style={styles.balancePatternBottomLeft} />
             <View style={styles.balanceInner}>
               <Text style={styles.totalLabel}>Total Wallet Balance</Text>

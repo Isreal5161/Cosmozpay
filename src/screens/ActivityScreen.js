@@ -58,9 +58,9 @@ const bottomTabs = [
 function ActivityRow({ amount, icon, positive, subtitle, time, title, palette, styles }) {
   return (
     <View style={styles.activityRow}>
-      <View style={styles.activityLeft}>
+        <View style={styles.activityLeft}>
         <View style={styles.activityIconWrap}>
-          <Feather color={palette.primary} name={icon} size={16} />
+          <Feather color={palette.icon} name={icon} size={16} />
         </View>
         <View>
           <Text style={styles.activityTitle}>{title}</Text>

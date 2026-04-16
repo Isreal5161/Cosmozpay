@@ -1,5 +1,5 @@
-import React from 'react';
-import { ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, Switch, Text, TouchableOpacity, View, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { getPalette, getProfileScreenStyles } from '../styles/GlobalStyles';
@@ -48,7 +48,7 @@ function SettingRow({ icon, palette, styles, subtitle, title, onPress }) {
     <TouchableOpacity activeOpacity={0.85} style={styles.row} onPress={onPress}>
       <View style={styles.rowLeft}>
         <View style={styles.rowIconWrap}>
-          <Feather color={palette.primary} name={icon} size={16} />
+          <Feather color={palette.icon} name={icon} size={16} />
         </View>
         <View>
           <Text style={styles.rowTitle}>{title}</Text>
@@ -73,10 +73,26 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
   );
 }
 
-export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThemeModeChange, themeMode = 'dark', onOpenPersonalDetails, onOpenSecurity }) {
+export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThemeModeChange, themeMode = 'dark', onOpenPersonalDetails, onOpenSecurity, user = { name: 'User', email: '' } }) {
   const palette = getPalette(themeMode);
   const styles = getProfileScreenStyles(palette);
   const isLightMode = themeMode === 'light';
+
+  const [settingsModalVisible, setSettingsModalVisible] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+
+  useEffect(() => {
+    // lazy-load persisted biometric setting
+    (async () => {
+      try {
+        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+        const v = await AsyncStorage.getItem('biometricEnabled');
+        setBiometricEnabled(v === '1');
+      } catch (e) {
+        // ignore
+      }
+    })();
+  }, []);
 
   // Agent banner and tier badge colors: use dark-gray background in dark mode and white button
   const agentGradientColors = themeMode === 'dark'
@@ -103,7 +119,7 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
               <Text style={styles.headerTitle}>Account and settings</Text>
             </View>
 
-            <TouchableOpacity activeOpacity={0.85} style={styles.headerAction}>
+            <TouchableOpacity activeOpacity={0.85} style={styles.headerAction} onPress={() => setSettingsModalVisible(true)}>
               <Feather color={palette.textMuted} name="settings" size={18} />
             </TouchableOpacity>
           </View>
@@ -111,10 +127,10 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
 
         <View style={styles.profileCard}>
           <View style={styles.profileAvatar}>
-            <Text style={styles.profileAvatarText}>O</Text>
+            <Text style={styles.profileAvatarText}>{(user?.name || 'U').charAt(0).toUpperCase()}</Text>
           </View>
-          <Text style={styles.profileName}>Olayinka Precious</Text>
-          <Text style={styles.profileHandle}>olayinka@cosmozpay.app</Text>
+          <Text style={styles.profileName}>{user?.name || 'User'}</Text>
+          <Text style={styles.profileHandle}>{user?.email || ''}</Text>
           <View style={[styles.tierBadge, { backgroundColor: tierBadgeBg }] }>
             <Text style={[styles.tierBadgeText, { color: tierBadgeTextColor }]}>Tier 2 verified</Text>
           </View>
@@ -183,6 +199,40 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
           ))}
         </View>
       </ScrollView>
+
+      <Modal visible={settingsModalVisible} animationType="slide" transparent>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: palette.background, padding: 16, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: palette.text }}>Settings</Text>
+              <TouchableOpacity onPress={() => setSettingsModalVisible(false)}>
+                <Feather name="x" size={20} color={palette.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12 }}>
+              <View>
+                <Text style={{ fontWeight: '700', color: palette.text }}>Enable fingerprint</Text>
+                <Text style={{ color: palette.textMuted, fontSize: 12 }}>Use biometric authentication for quick authorizations</Text>
+              </View>
+              <Switch
+                value={biometricEnabled}
+                onValueChange={async (v) => {
+                  setBiometricEnabled(v);
+                  try {
+                    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+                    await AsyncStorage.setItem('biometricEnabled', v ? '1' : '0');
+                  } catch (e) {
+                    // ignore
+                  }
+                }}
+                trackColor={{ false: palette.border, true: palette.primary }}
+                thumbColor={biometricEnabled ? '#fff' : undefined}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <View style={styles.bottomNav}>
         {bottomTabs.map((tab) => (

@@ -68,7 +68,7 @@ export default function PaymentsScreen({ activeTab = 'payments', onTabPress, the
             </View>
 
             <TouchableOpacity activeOpacity={0.85} style={styles.headerAction}>
-              <Feather color={palette.textMuted} name="search" size={18} />
+              <Feather color={palette.icon} name="search" size={18} />
             </TouchableOpacity>
           </View>
         </View>

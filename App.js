@@ -7,22 +7,45 @@ import HomeDashboardScreen from './src/screens/HomeDashboardScreen';
 import PaymentsScreen from './src/screens/PaymentsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import SplashScreen from './src/screens/SplashScreen';
+import SignupScreen from './src/screens/SignupScreen';
+import WelcomeScreen from './src/screens/WelcomeScreen';
+import LoginScreen from './src/screens/LoginScreen';
 import DepositScreen from './src/screens/DepositScreen';
 import { getPalette } from './src/styles/GlobalStyles';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
+  const [showSignup, setShowSignup] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
   // Use boolean for theme state per requirement
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  // Default to light mode
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [fullScreen, setFullScreen] = useState(null);
-  const [user, setUser] = useState({ name: 'Diateck', avatar: null, email: 'you@example.com', phone: '08100000000', balance: 15982.62 });
+  const [successPayload, setSuccessPayload] = useState(null);
+  const [user, setUser] = useState({ name: 'Diateck', avatar: null, email: 'you@example.com', phone: '', balance: 15982.62 });
   const translateY = useRef(new Animated.Value(90)).current;
 
   useEffect(() => {
     const timer = setTimeout(() => {
+      (async () => {
+        try {
+          const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+          const raw = await AsyncStorage.getItem('user');
+          if (raw) {
+            const stored = JSON.parse(raw);
+            setUser((u) => ({ ...u, ...stored }));
+            setShowWelcome(true);
+          } else {
+            setShowSignup(true);
+          }
+        } catch (e) {
+          setShowSignup(true);
+        }
+      })();
       setShowSplash(false);
-    }, 2200);
+    }, 6000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -57,7 +80,61 @@ export default function App() {
   }, [themeMode, palette.bottomBar]);
 
   if (showSplash) {
-    return <SplashScreen />;
+    return <SplashScreen themeMode={themeMode} />;
+  }
+
+  if (showSignup) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
+        <SignupScreen
+          themeMode={themeMode}
+          onSignup={async (payload) => {
+            try {
+              const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+              await AsyncStorage.setItem('user', JSON.stringify({ name: payload.name, email: payload.email, phone: payload.phone }));
+            } catch (e) {
+              // ignore storage errors
+            }
+            setUser((u) => ({ ...u, name: payload.name, email: payload.email, phone: payload.phone }));
+            setShowSignup(false);
+            setShowWelcome(true);
+          }}
+          onSignIn={() => { setShowSignup(false); setShowLogin(true); }}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  if (showLogin) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <LoginScreen
+          themeMode={themeMode}
+          onLogin={async (payload) => {
+            const nameFromId = payload.identifier ? (payload.identifier.split('@')[0] || payload.identifier) : 'User';
+            try {
+              const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+              await AsyncStorage.setItem('user', JSON.stringify({ name: nameFromId, email: payload.identifier }));
+            } catch (e) {
+              // ignore
+            }
+            setUser((u) => ({ ...u, name: nameFromId, email: payload.identifier }));
+            setShowLogin(false);
+            setShowWelcome(false);
+            setActiveTab('home');
+          }}
+          onBack={() => { setShowLogin(false); setShowSignup(true); }}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  if (showWelcome) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
+        <WelcomeScreen user={user} themeMode={themeMode} onContinue={() => setShowWelcome(false)} onSignIn={() => { setShowWelcome(false); setShowLogin(true); }} />
+      </SafeAreaView>
+    );
   }
 
   // compatibility helper: accept either boolean or string ('light'|'dark')
@@ -82,6 +159,7 @@ export default function App() {
         onTabPress={setActiveTab}
         onThemeModeChange={setThemeMode}
         themeMode={themeMode}
+        user={user}
         onOpenPersonalDetails={() => setFullScreen('personalDetails')}
         onOpenSecurity={() => setFullScreen('security')}
       />
@@ -128,10 +206,72 @@ export default function App() {
     const DataScreen = require('./src/screens/DataScreen').default;
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
-        <DataScreen user={user} onBack={() => setFullScreen(null)} themeMode={themeMode} />
+        <DataScreen user={user} onBack={() => setFullScreen(null)} themeMode={themeMode} onOpenOperator={(op) => setFullScreen(op)} />
       </SafeAreaView>
     );
   }
+  if (fullScreen === 'mtn') {
+    const MtnDataScreen = require('./src/screens/MtnDataScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <MtnDataScreen user={user} onBack={() => setFullScreen('data')} themeMode={themeMode} onOpenDeposit={openDeposit} onSuccess={(p)=>{ setSuccessPayload(p); setFullScreen('success'); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+  if (fullScreen === 'mtn_awuf') {
+    const MtnAwufDataScreen = require('./src/screens/MtnAwufDataScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <MtnAwufDataScreen user={user} onBack={() => setFullScreen('data')} themeMode={themeMode} onOpenDeposit={openDeposit} onSuccess={(p)=>{ setSuccessPayload(p); setFullScreen('success'); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+  if (fullScreen === 'airtel_awuf') {
+    const AirtelAwufDataScreen = require('./src/screens/AirtelAwufDataScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <AirtelAwufDataScreen user={user} onBack={() => setFullScreen('data')} themeMode={themeMode} onOpenDeposit={openDeposit} onSuccess={(p)=>{ setSuccessPayload(p); setFullScreen('success'); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+  if (fullScreen === 'airtel') {
+    const AirtelDataScreen = require('./src/screens/AirtelDataScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <AirtelDataScreen user={user} onBack={() => setFullScreen('data')} themeMode={themeMode} onOpenDeposit={openDeposit} onSuccess={(p)=>{ setSuccessPayload(p); setFullScreen('success'); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+    if (fullScreen === 'glo') {
+      const GloDataScreen = require('./src/screens/GloDataScreen').default;
+      return (
+        <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+            <GloDataScreen user={user} onBack={() => setFullScreen('data')} themeMode={themeMode} onOpenDeposit={openDeposit} onSuccess={(p)=>{ setSuccessPayload(p); setFullScreen('success'); }} />
+          <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+        </SafeAreaView>
+      );
+    }
+    if (fullScreen === '9mobile' || fullScreen === 'ninemobile') {
+      const NinemobileDataScreen = require('./src/screens/NinemobileDataScreen').default;
+      return (
+        <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+            <NinemobileDataScreen user={user} onBack={() => setFullScreen('data')} themeMode={themeMode} onOpenDeposit={openDeposit} onSuccess={(p)=>{ setSuccessPayload(p); setFullScreen('success'); }} />
+          <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+        </SafeAreaView>
+      );
+    }
+    if (fullScreen === 'success') {
+      const SuccessScreen = require('./src/screens/SuccessScreen').default;
+      return (
+        <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+          <SuccessScreen payload={successPayload} themeMode={themeMode} onDone={() => { setSuccessPayload(null); setFullScreen('data'); }} onSaveBeneficiary={(p) => { /* stub: save beneficiary */ }} onViewReceipt={(p) => { /* stub: open receipt */ }} />
+        </SafeAreaView>
+      );
+    }
   if (fullScreen === 'airtime') {
     const AirtimeScreen = require('./src/screens/AirtimeScreen').default;
     return (
