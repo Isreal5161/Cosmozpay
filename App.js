@@ -55,6 +55,8 @@ export default function App() {
       return;
     }
 
+    // Reset and run the slide-up animation whenever the visible main
+    // content could change (tab switch, welcome/login dismiss).
     translateY.setValue(90);
 
     Animated.timing(translateY, {
@@ -63,7 +65,7 @@ export default function App() {
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
-  }, [activeTab, showSplash, translateY]);
+  }, [activeTab, showSplash, showWelcome, showLogin, translateY]);
   const [depositVisible, setDepositVisible] = React.useState(false);
   function openDeposit() { setDepositVisible(true); }
   function closeDeposit() { setDepositVisible(false); }
