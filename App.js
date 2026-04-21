@@ -150,7 +150,7 @@ export default function App() {
 
   const currentScreen =
     activeTab === 'payments' ? (
-      <PaymentsScreen activeTab={activeTab} onTabPress={setActiveTab} themeMode={themeMode} onOpenDeposit={openDeposit} onOpenData={() => setFullScreen('data')} onOpenAirtime={() => setFullScreen('airtime')} />
+      <PaymentsScreen activeTab={activeTab} onTabPress={setActiveTab} themeMode={themeMode} onOpenDeposit={openDeposit} onOpenData={() => setFullScreen('data')} onOpenAirtime={() => setFullScreen('airtime')} onOpenElectricity={() => setFullScreen('electricity')} onOpenTvcable={() => setFullScreen('tvcable')} />
     ) : activeTab === 'activity' ? (
       <ActivityScreen activeTab={activeTab} onTabPress={setActiveTab} themeMode={themeMode} />
     ) : activeTab === 'cards' ? (
@@ -174,6 +174,8 @@ export default function App() {
         onOpenDeposit={openDeposit}
         onOpenData={() => setFullScreen('data')}
         onOpenAirtime={() => setFullScreen('airtime')}
+        onOpenElectricity={() => setFullScreen('electricity')}
+        onOpenTvcable={() => setFullScreen('tvcable')}
       />
     );
 
@@ -270,7 +272,7 @@ export default function App() {
       const SuccessScreen = require('./src/screens/SuccessScreen').default;
       return (
         <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
-          <SuccessScreen payload={successPayload} themeMode={themeMode} onDone={() => { setSuccessPayload(null); setFullScreen('data'); }} onSaveBeneficiary={(p) => { /* stub: save beneficiary */ }} onViewReceipt={(p) => { /* stub: open receipt */ }} />
+          <SuccessScreen payload={successPayload} themeMode={themeMode} onDone={() => { setSuccessPayload(null); setFullScreen(null); setActiveTab('home'); }} onSaveBeneficiary={(p) => { /* stub: save beneficiary */ }} onViewReceipt={(p) => { /* stub: open receipt */ }} />
         </SafeAreaView>
       );
     }
@@ -278,7 +280,85 @@ export default function App() {
     const AirtimeScreen = require('./src/screens/AirtimeScreen').default;
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
-        <AirtimeScreen user={user} onBack={() => setFullScreen(null)} themeMode={themeMode} />
+        <AirtimeScreen user={user} onBack={() => setFullScreen(null)} themeMode={themeMode} onOpenOperator={(op) => setFullScreen(op + '_airtime')} />
+      </SafeAreaView>
+    );
+  }
+  if (fullScreen === 'electricity') {
+    const ElectricityScreen = require('./src/screens/ElectricityScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <ElectricityScreen user={user} onBack={() => setFullScreen(null)} themeMode={themeMode} onSelectProvider={(p)=>{ setFullScreen('electricity_provider_'+p.key); }} />
+      </SafeAreaView>
+    );
+  }
+
+  if (fullScreen === 'tvcable') {
+    const TvCableScreen = require('./src/screens/TvCableScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <TvCableScreen user={user} onBack={() => setFullScreen(null)} themeMode={themeMode} onOpenDeposit={openDeposit} onSelectProvider={(p)=>{ setFullScreen('tvcable_provider_'+p.key); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+
+  if (typeof fullScreen === 'string' && fullScreen.startsWith('tvcable_provider_')) {
+    const key = fullScreen.replace('tvcable_provider_', '');
+    const TvCableProviderScreen = require('./src/screens/TvCableProviderScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <TvCableProviderScreen user={user} onBack={() => setFullScreen('tvcable')} themeMode={themeMode} providerKey={key} onOpenDeposit={openDeposit} onSuccess={(p)=>{ setSuccessPayload(p); setFullScreen('success'); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+
+  // electricity provider specific screens
+  if (typeof fullScreen === 'string' && fullScreen.startsWith('electricity_provider_')) {
+    const key = fullScreen.replace('electricity_provider_', '');
+    const ElectricityProviderScreen = require('./src/screens/ElectricityProviderScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <ElectricityProviderScreen user={user} onBack={() => setFullScreen('electricity')} themeMode={themeMode} providerKey={key} onOpenDeposit={openDeposit} onSuccess={(p)=>{ setSuccessPayload(p); setFullScreen('success'); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+
+  if (fullScreen === 'mtn_airtime') {
+    const MtnAirtimeScreen = require('./src/screens/MtnAirtimeScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <MtnAirtimeScreen user={user} onBack={() => setFullScreen('airtime')} themeMode={themeMode} onOpenDeposit={openDeposit} onSuccess={(p)=>{ setSuccessPayload(p); setFullScreen('success'); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+  if (fullScreen === 'airtel_airtime') {
+    const AirtelAirtimeScreen = require('./src/screens/AirtelAirtimeScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <AirtelAirtimeScreen user={user} onBack={() => setFullScreen('airtime')} themeMode={themeMode} onOpenDeposit={openDeposit} onSuccess={(p)=>{ setSuccessPayload(p); setFullScreen('success'); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+  if (fullScreen === 'glo_airtime') {
+    const GloAirtimeScreen = require('./src/screens/GloAirtimeScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <GloAirtimeScreen user={user} onBack={() => setFullScreen('airtime')} themeMode={themeMode} onOpenDeposit={openDeposit} onSuccess={(p)=>{ setSuccessPayload(p); setFullScreen('success'); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+  if (fullScreen === '9mobile_airtime' || fullScreen === 'ninemobile_airtime') {
+    const NinemobileAirtimeScreen = require('./src/screens/NinemobileAirtimeScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <NinemobileAirtimeScreen user={user} onBack={() => setFullScreen('airtime')} themeMode={themeMode} onOpenDeposit={openDeposit} onSuccess={(p)=>{ setSuccessPayload(p); setFullScreen('success'); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
       </SafeAreaView>
     );
   }

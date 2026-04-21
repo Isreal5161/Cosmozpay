@@ -3,6 +3,7 @@ import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Moda
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { getPalette } from '../styles/GlobalStyles';
+import VerifiedNumberSuggest, { saveVerifiedNumber } from '../components/VerifiedNumberSuggest';
 
 const DUMMY_PACKAGES = [
   { id: 'p1', title: '120MB Whatsapp - 1 Month', subtitle: 'Dial *223*4# to check data balance' },
@@ -16,7 +17,7 @@ export default function AirtelDataScreen({ user, onBack, themeMode = 'dark', onO
   const palette = getPalette(themeMode);
   const barBgColor = themeMode === 'light' ? '#fff' : '#000';
   const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
-  const [phone, setPhone] = useState(user?.phone || '');
+  const [phone, setPhone] = useState('');
   const [verified, setVerified] = useState(false);
   const [verifyError, setVerifyError] = useState('');
   const [packagesVisible, setPackagesVisible] = useState(false);
@@ -80,10 +81,11 @@ export default function AirtelDataScreen({ user, onBack, themeMode = 'dark', onO
       return;
     }
     const isAirtel = AIRTEL_PREFIXES.some((pre) => normal.startsWith(pre));
-    if (isAirtel) {
+    if (isAirtel) { 
       setVerified(true);
       setPackagesVisible(true);
       setVerifyError('');
+      saveVerifiedNumber('airtel', normal);
     } else {
       setVerified(false);
       setVerifyError('Not an Airtel number');
@@ -202,6 +204,7 @@ export default function AirtelDataScreen({ user, onBack, themeMode = 'dark', onO
 
       <View style={styles.content}>
         <View style={[styles.card, { backgroundColor: palette.surface }]}> 
+          <VerifiedNumberSuggest provider="airtel" query={phone} onSelect={(n) => setPhone(n)} />
           <Text style={[styles.label, { color: palette.textMuted }]}>Phone Number</Text>
           <View style={styles.row}>
             <TextInput
@@ -210,6 +213,10 @@ export default function AirtelDataScreen({ user, onBack, themeMode = 'dark', onO
               placeholder="Phone number"
               placeholderTextColor={palette.textMuted}
               keyboardType="phone-pad"
+              autoComplete="off"
+              autoCorrect={false}
+              textContentType="none"
+              importantForAutofill="no"
               style={[styles.input, { color: palette.text, backgroundColor: palette.surface }]}
             />
             <TouchableOpacity style={[styles.verifyButton, { backgroundColor: palette.primary }]} onPress={verifyNumber}>

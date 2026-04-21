@@ -1,34 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, FlatList, Image, Platform, StatusBar as RNStatusBar, Animated } from 'react-native';
+import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Animated, Image, Platform, StatusBar as RNStatusBar, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { getPalette } from '../styles/GlobalStyles';
+import VerifiedNumberSuggest, { saveVerifiedNumber } from '../components/VerifiedNumberSuggest';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
-const DUMMY_PACKAGES = [
-  { id: 'awuf1', title: 'Awuf 50MB - 1 Day', subtitle: 'Quick social browsing' },
-  { id: 'awuf2', title: 'Awuf 150MB - 7 Days', subtitle: 'Light weekly usage' },
-  { id: 'awuf3', title: 'Awuf 400MB - 14 Days', subtitle: 'Balanced short plan' },
-  { id: 'awuf4', title: 'Awuf 1GB - 30 Days', subtitle: 'Monthly Awuf bundle' },
-];
-
-export default function MtnAwufDataScreen({ user, onBack, themeMode = 'dark', onOpenDeposit, onSuccess }) {
+export default function MtnAirtimeScreen({ user, onBack, themeMode = 'dark', onOpenDeposit, onSuccess }) {
   const palette = getPalette(themeMode);
   const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
-  const barBgColor = themeMode === 'light' ? '#fff' : '#000';
   const [phone, setPhone] = useState('');
   const [verified, setVerified] = useState(false);
   const [verifyError, setVerifyError] = useState('');
-  const [packagesVisible, setPackagesVisible] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [amount, setAmount] = useState('');
+  const [voucher, setVoucher] = useState('');
+  const [voucherApplied, setVoucherApplied] = useState(false);
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [processing, setProcessing] = useState(false);
   const [authVisible, setAuthVisible] = useState(false);
   const [pin, setPin] = useState('');
   const pinInputRef = useRef(null);
   const loadingAnim = useRef(new Animated.Value(1)).current;
   const loadingLoopRef = useRef(null);
-  const [voucher, setVoucher] = useState('');
-  const [voucherApplied, setVoucherApplied] = useState(false);
-  const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
   useEffect(() => {
@@ -43,25 +36,7 @@ export default function MtnAwufDataScreen({ user, onBack, themeMode = 'dark', on
     })();
   }, []);
 
-  async function tryBiometricAuth() {
-    try {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const enrolled = await LocalAuthentication.isEnrolledAsync();
-      if (!hasHardware || !enrolled) return false;
-      const res = await LocalAuthentication.authenticateAsync({ promptMessage: 'Authenticate to pay' });
-      if (res.success) {
-        setAuthVisible(false);
-        const payload = { success: true, provider: 'mtn_awuf', phone, selectedPackage, amount: getPayableAmount(), voucherApplied, timestamp: Date.now() };
-        if (typeof onSuccess === 'function') onSuccess(payload);
-        return true;
-      }
-    } catch (e) {
-      // ignore
-    }
-    return false;
-  }
-
-  const MTN_PREFIXES = ['0803','0806','0703','0706','0810','0813','0814','0816','0903','0906','0913'];
+  const MTN_PREFIXES = ['0803','0806','0703','0706','0810','0813','0816','0903','0906','0913','0916','0804','07025','07026','0704'];
 
   function verifyNumber() {
     setVerifyError('');
@@ -81,49 +56,17 @@ export default function MtnAwufDataScreen({ user, onBack, themeMode = 'dark', on
     const isMtn = MTN_PREFIXES.some((pre) => normal.startsWith(pre));
     if (isMtn) {
       setVerified(true);
-      setPackagesVisible(true);
       setVerifyError('');
+      saveVerifiedNumber('mtn', normal);
     } else {
       setVerified(false);
       setVerifyError('Not an MTN number');
     }
   }
 
-  function renderPackage({ item }) {
-    return (
-      <TouchableOpacity style={[styles.pkgRow, { backgroundColor: palette.surface }]} onPress={() => { setSelectedPackage(item); setPackagesVisible(false); }}>
-        <View style={styles.pkgIconWrap}>
-          <Image source={require('../../public/mtn-logo.png')} style={styles.pkgIcon} />
-        </View>
-        <View style={styles.pkgText}>
-          <Text style={[styles.pkgTitle, { color: palette.text }]}>{item.title}</Text>
-          <Text style={[styles.pkgSub, { color: palette.textMuted }]}>{item.subtitle}</Text>
-        </View>
-        <View style={styles.pkgSelect}>
-          <Feather name={selectedPackage?.id === item.id ? 'check-circle' : 'circle'} size={20} color={palette.primary} />
-        </View>
-      </TouchableOpacity>
-    );
-  }
-
-  function getAmountForPackage(pkg) {
-    if (!pkg) return 0;
-    const title = (pkg.title || '').toLowerCase();
-    if (title.includes('50mb')) return 25;
-    if (title.includes('150mb')) return 65;
-    if (title.includes('400mb')) return 150;
-    if (title.includes('1gb')) return 350;
-    return 100;
-  }
-
-  function getPayableAmount() {
-    const base = getAmountForPackage(selectedPackage);
-    return Math.max(0, base - (voucherApplied ? voucherDiscount : 0));
-  }
-
   function applyVoucher() {
     if (!voucher) return;
-    if (voucher.trim().toUpperCase() === 'AWUF50') {
+    if (voucher.trim().toUpperCase() === 'SAVE50') {
       setVoucherDiscount(50);
       setVoucherApplied(true);
     } else {
@@ -133,7 +76,7 @@ export default function MtnAwufDataScreen({ user, onBack, themeMode = 'dark', on
   }
 
   function startPurchase() {
-    if (!verified || !selectedPackage) return;
+    if (!verified || !(parseFloat(String(amount).replace(/[^0-9.]/g, '')) > 0)) return;
     setProcessing(true);
     loadingAnim.setValue(1);
     const loop = Animated.loop(
@@ -154,23 +97,44 @@ export default function MtnAwufDataScreen({ user, onBack, themeMode = 'dark', on
 
   function handlePay() {
     setAuthVisible(false);
-    const payload = { success: true, provider: 'mtn_awuf', phone, selectedPackage, amount: getPayableAmount(), voucherApplied, timestamp: Date.now() };
+    const amt = parseFloat(String(amount).replace(/[^0-9.]/g, '')) || 0;
+    const payable = Math.max(0, amt - (voucherApplied ? voucherDiscount : 0));
+    const payload = { success: true, provider: 'mtn', phone, amount: payable, voucherApplied, timestamp: Date.now() };
     if (typeof onSuccess === 'function') onSuccess(payload);
   }
 
   React.useEffect(() => {
-    if (authVisible) {
-      setTimeout(() => pinInputRef.current?.focus?.(), 220);
-    }
+    if (authVisible) setTimeout(() => pinInputRef.current?.focus?.(), 220);
   }, [authVisible]);
 
+  // auto-verify phone if it matches MTN prefixes to make the form more responsive
+  React.useEffect(() => {
+    const raw = String(phone || '').replace(/\D/g, '');
+    let normal = raw;
+    if (normal.startsWith('234')) normal = '0' + normal.slice(3);
+    if (normal.length >= 10) {
+      const isMtn = MTN_PREFIXES.some((pre) => normal.startsWith(pre));
+      setVerified(isMtn);
+      if (!isMtn) setVerifyError('Not an MTN number');
+      else setVerifyError('');
+    } else {
+      setVerified(false);
+      setVerifyError('');
+    }
+  }, [phone]);
+
+  const numericAmount = parseFloat(String(amount).replace(/[^0-9.]/g, '')) || 0;
+  const isFormValid = verified && numericAmount > 0 && !!phone;
+
+  const presets = ['100','200','300','500','1000'];
+  const proceedLabel = !phone ? 'Insert number' : (numericAmount <= 0 ? 'Enter amount' : 'Proceed');
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
+    <SafeAreaView style={[styles.container, { backgroundColor: palette.background, paddingTop: safeTop }]}>
       <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: 6 }]}> 
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Feather name="chevron-left" size={20} color={palette.text} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: palette.text }]}>MTN Awuf Bundles</Text>
+        <Text style={[styles.title, { color: palette.text }]}>Buy Airtime Topup</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={[styles.depositButton, { backgroundColor: palette.primary }]} onPress={() => onOpenDeposit?.()}>
             <Text style={styles.depositText}>+ Deposit</Text>
@@ -183,23 +147,35 @@ export default function MtnAwufDataScreen({ user, onBack, themeMode = 'dark', on
         <Text style={[styles.balanceAmount, { color: palette.text }]}>NGN {Number(user?.balance || 0).toLocaleString()}</Text>
         <Image source={require('../../public/mtn-logo.png')} style={styles.mtnLogo} />
         <View style={styles.delRateRow}>
-          <View style={[styles.delBarBackground, { backgroundColor: barBgColor }]}> 
-            <View style={[styles.delBarFill, { width: '88%', backgroundColor: '#2ECC71' }]} />
+          <View style={[styles.delBarBackground, { backgroundColor: palette.background }]}> 
+            <View style={[styles.delBarFill, { width: '100%', backgroundColor: '#2ECC71' }]} />
           </View>
-          <Text style={[styles.delLabel, { color: palette.textMuted }]}>MTN Awuf Delivery</Text>
-          <Text style={[styles.delPct, { color: palette.text }]}>88.00%</Text>
+          <Text style={[styles.delLabel, { color: palette.textMuted }]}>MTN Delivery Rate Nationwide</Text>
+          <Text style={[styles.delPct, { color: palette.text }]}>100.00%</Text>
         </View>
-        <Text style={[styles.dialText, { color: palette.textMuted }]}>Dial *131*5# to check Awuf balances</Text>
+        <Text style={[styles.dialText, { color: palette.textMuted }]}>Dial *310# to check airtime balance</Text>
       </View>
 
-      <View style={styles.content}>
-        <View style={[styles.card, { backgroundColor: palette.surface }]}> 
-          <Text style={[styles.label, { color: palette.textMuted }]}>Phone Number</Text>
+      <KeyboardAwareScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+        enableOnAndroid={true}
+        extraScrollHeight={Platform.OS === 'ios' ? 20 : 100}
+        keyboardOpeningTime={0}
+        enableAutomaticScroll={true}
+        keyboardShouldPersistTaps="handled"
+      >
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()} accessible={false}>
+          <View style={{ flex: 1 }}>
+            <View style={styles.content}>
+            <View style={[styles.card, { backgroundColor: palette.surface }]}> 
+            <VerifiedNumberSuggest provider="mtn" query={phone} onSelect={(n) => setPhone(n)} />
+            <Text style={[styles.label, { color: palette.textMuted }]}>Phone Number</Text>
           <View style={styles.row}>
             <TextInput
               value={phone}
               onChangeText={(t) => { setPhone(t); setVerified(false); }}
-              placeholder="Phone number"
+              placeholder="Enter phone number"
               placeholderTextColor={palette.textMuted}
               keyboardType="phone-pad"
               autoComplete="off"
@@ -216,34 +192,38 @@ export default function MtnAwufDataScreen({ user, onBack, themeMode = 'dark', on
             <Text style={[styles.chooseContact, { color: '#FF6B6B' }]}>Choose from your contacts</Text>
           </TouchableOpacity>
           {verifyError ? <Text style={[styles.errorText]}>{verifyError}</Text> : null}
+          {verified && (
+            <View style={styles.verifiedRow}>
+              <Feather name="check-circle" size={16} color="#2ECC71" />
+              <Text style={[styles.verifiedText, { color: '#2ECC71' }]}> Verified MTN Number</Text>
+            </View>
+          )}
+
+          <Text style={[styles.label, { color: palette.textMuted, marginTop: 16 }]}>Amount</Text>
+          <TextInput
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="Enter Amount"
+            placeholderTextColor={palette.textMuted}
+            keyboardType="numeric"
+            editable={true}
+            style={[styles.amountInput, { color: palette.text, backgroundColor: palette.surface, borderColor: palette.textMuted }]}
+          />
 
           <View style={styles.pillsRow}>
-            {['50MB','150MB','1GB','More'].map((p) => (
-              <TouchableOpacity
-                key={p}
-                style={[styles.pill, { backgroundColor: palette.surface }]}
-                onPress={() => { if (p === 'More') { setPackagesVisible(true); } else { setSelectedPackage({ id: p, title: p }); } }}
-              >
-                <Text style={{ color: palette.text }}>{p}</Text>
+            {presets.map((p) => (
+              <TouchableOpacity key={p} style={[styles.pill, { backgroundColor: palette.surface }]} onPress={() => setAmount(p)}>
+                <Text style={{ color: palette.text }}>{`₦${p}`}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <TouchableOpacity style={[styles.selectPackageButton, { backgroundColor: palette.surface }]} onPress={() => setPackagesVisible(true)}>
-            <Text style={{ color: palette.textMuted }}>{selectedPackage ? selectedPackage.title : 'Select Awuf Package'}</Text>
-            <Feather name="chevron-down" size={18} color={palette.textMuted} />
-          </TouchableOpacity>
-
           <View style={[styles.amountBox, { backgroundColor: palette.surface }]}> 
-            <Text style={{ color: palette.textMuted, fontSize: 12 }}>Amount</Text>
-            <Text style={{ color: palette.text, fontWeight: '800', marginTop: 6 }}>
-              {selectedPackage ? `₦${getAmountForPackage(selectedPackage).toFixed(2)}` : '—'}
-            </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
               <TextInput
                 value={voucher}
                 onChangeText={setVoucher}
-                placeholder="Apply voucher"
+                placeholder="Apply promo code"
                 placeholderTextColor={palette.textMuted}
                 style={[styles.voucherInput, { color: palette.text, backgroundColor: palette.surface }]}
               />
@@ -251,41 +231,25 @@ export default function MtnAwufDataScreen({ user, onBack, themeMode = 'dark', on
                 <Text style={{ color: '#fff', fontWeight: '700' }}>{voucherApplied ? 'Applied' : 'Apply'}</Text>
               </TouchableOpacity>
             </View>
-            <Text style={{ marginTop: 8, color: palette.text, fontWeight: '800' }}>Payable: {selectedPackage ? `₦${getPayableAmount().toFixed(2)}` : '—'}</Text>
+            <Text style={{ marginTop: 8, color: palette.text, fontWeight: '800' }}>Payable: {`₦${Math.max(0, (parseFloat(String(amount).replace(/[^0-9.]/g, ''))||0) - (voucherApplied ? voucherDiscount : 0)).toFixed(2)}`}</Text>
             {voucherApplied && <Text style={{ color: '#2ECC71', marginTop: 4 }}>Voucher applied: -₦{voucherDiscount}</Text>}
           </View>
 
           <TouchableOpacity
-            style={[styles.proceedButton, { backgroundColor: (verified && selectedPackage) ? palette.primary : '#777' }]}
-            disabled={!verified || !selectedPackage || processing}
+            style={[
+              styles.proceedButton,
+              { backgroundColor: (verified && numericAmount > 0) ? palette.primary : '#777', width: '100%' },
+            ]}
+            disabled={!verified || numericAmount <= 0 || processing}
             onPress={startPurchase}
           >
-            <Text style={styles.proceedText}>
-              {!phone ? 'Insert number' : !selectedPackage ? 'Choose package' : 'Proceed'}
-            </Text>
+            <Text style={styles.proceedText}>{proceedLabel}</Text>
           </TouchableOpacity>
-        </View>
-      </View>
-
-      <Modal visible={packagesVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: palette.background }]}> 
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: palette.text }]}>Select Awuf Packages</Text>
-              <TouchableOpacity onPress={() => setPackagesVisible(false)}>
-                <Feather name="x" size={20} color={palette.text} />
-              </TouchableOpacity>
             </View>
-
-            <View style={styles.searchRow}>
-              <Feather name="search" size={16} color={palette.textMuted} />
-              <TextInput placeholder="Search..." placeholderTextColor={palette.textMuted} style={[styles.searchInput, { color: palette.text }]} />
-            </View>
-
-            <FlatList data={DUMMY_PACKAGES} keyExtractor={(i) => i.id} renderItem={renderPackage} contentContainerStyle={{ paddingBottom: 32 }} />
           </View>
-        </View>
-      </Modal>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAwareScrollView>
 
       {processing && (
         <View style={styles.processingOverlay} pointerEvents="none">
@@ -305,19 +269,30 @@ export default function MtnAwufDataScreen({ user, onBack, themeMode = 'dark', on
               </TouchableOpacity>
             </View>
 
-            <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Product</Text><Text style={[styles.authValue, { color: palette.text }]}>{selectedPackage?.title || 'MTN Awuf Bundle'}</Text></View>
-            <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Recipient</Text><Text style={[styles.authValue, { color: '#F6A800' }]}>{phone}</Text></View>
-            <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Amount</Text><Text style={[styles.authValue, { color: palette.text }]}>{'₦' + getAmountForPackage(selectedPackage).toFixed(2)}</Text></View>
-            <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Total Payable</Text><Text style={[styles.authValue, { color: '#E94B4B' }]}>{'₦' + getPayableAmount().toFixed(2)}</Text></View>
+            <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Product</Text><Text style={[styles.authValue, { color: palette.text }]}>{'MTN Airtime'}</Text></View>
+            <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Recipient</Text><Text style={[styles.authValue, { color: '#2DA2F9' }]}>{phone}</Text></View>
+            <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Amount</Text><Text style={[styles.authValue, { color: palette.text }]}>{'₦' + (parseFloat(String(amount).replace(/[^0-9.]/g, ''))||0).toFixed(2)}</Text></View>
+            <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Total Payable</Text><Text style={[styles.authValue, { color: '#E94B4B' }]}>{'₦' + Math.max(0, (parseFloat(String(amount).replace(/[^0-9.]/g, ''))||0) - (voucherApplied ? voucherDiscount : 0)).toFixed(2)}</Text></View>
 
             <Text style={[styles.pinPrompt, { color: palette.text }]}>Enter Account Pin To Authorize</Text>
             <View style={styles.pinCircles}>
               {[0,1,2,3].map((i) => (
-                <View key={i} style={[styles.pinCircle, pin.length > i && styles.pinFilled]} />
+                <View
+                  key={i}
+                  style={[
+                    styles.pinCircle,
+                    { borderColor: palette.textMuted, backgroundColor: pin.length > i ? palette.primary : 'transparent' },
+                  ]}
+                />
               ))}
             </View>
             {biometricEnabled ? (
-              <TouchableOpacity onPress={tryBiometricAuth} style={{ alignSelf: 'center', marginBottom: 12 }}>
+              <TouchableOpacity onPress={async () => {
+                try {
+                  const res = await LocalAuthentication.authenticateAsync({ promptMessage: 'Authenticate to pay' });
+                  if (res.success) handlePay();
+                } catch (e) {}
+              }} style={{ alignSelf: 'center', marginBottom: 12 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <MaterialIcons name="fingerprint" size={28} color={palette.primary} />
                   <Text style={{ color: palette.primary, fontWeight: '700' }}>Use fingerprint</Text>
@@ -347,7 +322,6 @@ const styles = StyleSheet.create({
   balanceCard: { borderRadius: 12, padding: 16, margin: 16 },
   balanceLabel: { fontSize: 13, marginBottom: 6 },
   balanceAmount: { fontSize: 20, fontWeight: '800' },
-  commissionText: { marginTop: 6, fontSize: 12 },
   delRateRow: { marginTop: 12, alignItems: 'center' },
   delBarBackground: { height: 12, backgroundColor: '#ccc', borderRadius: 8, overflow: 'hidden', width: '100%' },
   delBarFill: { height: 12, borderRadius: 8 },
@@ -362,24 +336,14 @@ const styles = StyleSheet.create({
   verifiedRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   verifiedText: { marginLeft: 8, fontSize: 13 },
   chooseContact: { marginTop: 8, marginBottom: 6 },
-  selectPackageButton: { marginTop: 12, padding: 12, borderRadius: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  proceedButton: { marginTop: 18, padding: 12, borderRadius: 10, alignItems: 'center' },
-  proceedText: { color: '#fff', fontWeight: '700' },
   pillsRow: { flexDirection: 'row', marginTop: 12, flexWrap: 'wrap' },
   pill: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, marginRight: 8 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalSheet: { height: '60%', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  modalTitle: { fontSize: 18, fontWeight: '800' },
-  searchRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 8, marginBottom: 12 },
-  searchInput: { marginLeft: 8, flex: 1 },
-  pkgRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, marginBottom: 10 },
-  pkgIconWrap: { width: 44, height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  pkgIcon: { width: 36, height: 36, resizeMode: 'contain' },
-  pkgText: { flex: 1 },
-  pkgTitle: { fontWeight: '700' },
-  pkgSub: { fontSize: 12, marginTop: 2 },
-  pkgSelect: { paddingLeft: 8 },
+  amountInput: { width: '100%', padding: 12, borderRadius: 8, borderWidth: 1, marginTop: 8 },
+  proceedButton: { marginTop: 18, padding: 14, borderRadius: 10, alignItems: 'center', marginBottom: 20 },
+  proceedText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  amountBox: { marginTop: 12, padding: 12, borderRadius: 8, alignItems: 'flex-start' },
+  voucherInput: { flex: 1, padding: 10, borderRadius: 8, marginRight: 8 },
+  applyVoucherButton: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8 },
   mtnLogo: { width: 36, height: 24, resizeMode: 'contain', position: 'absolute', right: 20, top: 12 },
   dialText: { textAlign: 'center', marginTop: 8 },
   errorText: { color: '#E94B4B', marginTop: 6 },
@@ -399,7 +363,4 @@ const styles = StyleSheet.create({
   pinFilled: { backgroundColor: 'rgba(255,255,255,0.2)' },
   payButton: { padding: 12, borderRadius: 10, alignItems: 'center' },
   payText: { color: '#fff', fontWeight: '700' },
-  amountBox: { marginTop: 12, padding: 12, borderRadius: 8, alignItems: 'flex-start' },
-  voucherInput: { flex: 1, padding: 10, borderRadius: 8, marginRight: 8 },
-  applyVoucherButton: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8 },
 });

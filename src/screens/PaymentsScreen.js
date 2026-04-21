@@ -7,7 +7,6 @@ import { getPalette, getPaymentScreenStyles } from '../styles/GlobalStyles';
 const paymentServices = [
   { label: 'Data Bundle', icon: 'signal-cellular-2', tint: '#FF8D85' },
   { label: 'Airtime Topup', icon: 'phone-outline', tint: '#8A4DFF' },
-  { label: 'Bill Payment', icon: 'receipt-text-outline', tint: '#4FD1A1' },
   { label: 'Education', icon: 'school-outline', tint: '#58B8FF' },
   { label: 'Netflix', icon: 'netflix', tint: '#F45B5B' },
   { label: 'Exam Pin', icon: 'card-account-details-outline', tint: '#F5B544' },
@@ -48,7 +47,7 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
   );
 }
 
-export default function PaymentsScreen({ activeTab = 'payments', onTabPress, themeMode = 'dark', onOpenDeposit, onOpenData, onOpenAirtime }) {
+export default function PaymentsScreen({ activeTab = 'payments', onTabPress, themeMode = 'dark', onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable }) {
   const palette = getPalette(themeMode);
   const styles = getPaymentScreenStyles(palette);
 
@@ -93,7 +92,6 @@ export default function PaymentsScreen({ activeTab = 'payments', onTabPress, the
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Payment services</Text>
-          <Text style={styles.sectionLink}>More</Text>
         </View>
 
         <View style={styles.serviceGrid}>
@@ -101,6 +99,8 @@ export default function PaymentsScreen({ activeTab = 'payments', onTabPress, the
             let handler;
             if (item.label === 'Data Bundle') handler = () => onOpenData?.();
             if (item.label === 'Airtime Topup') handler = () => onOpenAirtime?.();
+            if (item.label === 'Electricity') handler = () => onOpenElectricity?.();
+            if (item.label === 'Cable TV') handler = () => onOpenTvcable?.();
             return <PaymentCard key={item.label} palette={palette} styles={styles} {...item} onPress={handler} />;
           })}
         </View>

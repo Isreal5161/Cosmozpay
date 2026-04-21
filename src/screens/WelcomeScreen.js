@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { getPalette } from '../styles/GlobalStyles';
 
 export default function WelcomeScreen({ user = { name: 'User' }, onContinue, onSignIn, themeMode = 'light' }) {
   const palette = getPalette(themeMode);
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: '#FFFFFF' }]}> 
+    <View style={[styles.screen, { backgroundColor: '#FFFFFF' }]}> 
       <View style={styles.topIllustration}>
         <View style={[styles.illustrationCard, { backgroundColor: '#E8F8FF' }]}>
           <Image source={require('../../public/paybill.png')} style={styles.illustrationImage} resizeMode="contain" />
@@ -37,7 +37,7 @@ export default function WelcomeScreen({ user = { name: 'User' }, onContinue, onS
           <Text style={[styles.primaryButtonText, { color: '#FFFFFF' }]}>Continue</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

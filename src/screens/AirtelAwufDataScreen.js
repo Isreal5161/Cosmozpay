@@ -15,7 +15,7 @@ export default function AirtelAwufDataScreen({ user, onBack, themeMode = 'dark',
   const palette = getPalette(themeMode);
   const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
   const barBgColor = themeMode === 'light' ? '#fff' : '#000';
-  const [phone, setPhone] = useState(user?.phone || '');
+  const [phone, setPhone] = useState('');
   const [verified, setVerified] = useState(false);
   const [verifyError, setVerifyError] = useState('');
   const [packagesVisible, setPackagesVisible] = useState(false);
@@ -202,6 +202,10 @@ export default function AirtelAwufDataScreen({ user, onBack, themeMode = 'dark',
               placeholder="Phone number"
               placeholderTextColor={palette.textMuted}
               keyboardType="phone-pad"
+              autoComplete="off"
+              autoCorrect={false}
+              textContentType="none"
+              importantForAutofill="no"
               style={[styles.input, { color: palette.text, backgroundColor: palette.surface }]}
             />
             <TouchableOpacity style={[styles.verifyButton, { backgroundColor: palette.primary }]} onPress={verifyNumber}>

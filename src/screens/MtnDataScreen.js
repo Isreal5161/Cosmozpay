@@ -3,6 +3,7 @@ import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Moda
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { getPalette } from '../styles/GlobalStyles';
+import VerifiedNumberSuggest, { saveVerifiedNumber } from '../components/VerifiedNumberSuggest';
 
 const DUMMY_PACKAGES = [
   { id: 'p1', title: '120MB Whatsapp - 1 Month', subtitle: 'Dial *323*4# to check data balance' },
@@ -16,7 +17,7 @@ export default function MtnDataScreen({ user, onBack, themeMode = 'dark', onOpen
   const palette = getPalette(themeMode);
   const barBgColor = themeMode === 'light' ? '#fff' : '#000';
   const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
-  const [phone, setPhone] = useState(user?.phone || '');
+  const [phone, setPhone] = useState('');
   const [verified, setVerified] = useState(false);
   const [verifyError, setVerifyError] = useState('');
   const [packagesVisible, setPackagesVisible] = useState(false);
@@ -85,6 +86,7 @@ export default function MtnDataScreen({ user, onBack, themeMode = 'dark', onOpen
       setVerified(true);
       setPackagesVisible(true);
       setVerifyError('');
+      saveVerifiedNumber('mtn', normal);
     } else {
       setVerified(false);
       setVerifyError('Not an MTN number');
@@ -211,6 +213,7 @@ export default function MtnDataScreen({ user, onBack, themeMode = 'dark', onOpen
 
       <View style={styles.content}>
         <View style={[styles.card, { backgroundColor: palette.surface }]}> 
+          <VerifiedNumberSuggest provider="mtn" query={phone} onSelect={(n) => setPhone(n)} />
           <Text style={[styles.label, { color: palette.textMuted }]}>Phone Number</Text>
           <View style={styles.row}>
             <TextInput
@@ -219,6 +222,10 @@ export default function MtnDataScreen({ user, onBack, themeMode = 'dark', onOpen
               placeholder="Phone number"
               placeholderTextColor={palette.textMuted}
               keyboardType="phone-pad"
+              autoComplete="off"
+              autoCorrect={false}
+              textContentType="none"
+              importantForAutofill="no"
               style={[styles.input, { color: palette.text, backgroundColor: palette.surface }]}
             />
             <TouchableOpacity style={[styles.verifyButton, { backgroundColor: palette.primary }]} onPress={verifyNumber}>

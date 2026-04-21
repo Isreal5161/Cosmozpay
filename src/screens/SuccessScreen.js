@@ -47,8 +47,8 @@ export default function SuccessScreen({ payload = {}, onDone, onSaveBeneficiary,
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={[styles.doneButton, { backgroundColor: '#2ECC71' }]} onPress={() => onDone?.()}>
-          <Text style={styles.doneText}>Done</Text>
+        <TouchableOpacity style={[styles.doneButton, { backgroundColor: palette.primary }]} onPress={() => onDone?.()}>
+          <Text style={[styles.doneText, { color: palette.iconOnPrimary || '#fff' }]}>Done</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

@@ -34,14 +34,18 @@ const operators = [
   },
 ];
 
-export default function AirtimeScreen({ user, onBack, themeMode = 'dark' }) {
+export default function AirtimeScreen({ user, onBack, themeMode = 'dark', onOpenOperator }) {
   const palette = getPalette(themeMode);
 
   const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
 
   function renderOperator({ item }) {
     return (
-      <TouchableOpacity style={[styles.opTile, { backgroundColor: palette.surface }]} activeOpacity={0.85}>
+      <TouchableOpacity
+        style={[styles.opTile, { backgroundColor: palette.surface }]}
+        activeOpacity={0.85}
+        onPress={() => onOpenOperator?.(item.key)}
+      >
         <View style={styles.opIcon}>
           {item.localLogo ? (
             <Image source={item.localLogo} style={styles.opIconImage} />

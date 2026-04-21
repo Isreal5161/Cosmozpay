@@ -109,7 +109,7 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
   );
 }
 
-export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, themeMode = 'dark', user = { name: 'Diateck', avatar: null }, onOpenDeposit, onOpenData, onOpenAirtime }) {
+export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, themeMode = 'dark', user = { name: 'Diateck', avatar: null }, onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable }) {
   const palette = getPalette(themeMode);
   const styles = getHomeDashboardStyles(palette);
   const initial = (user?.name || 'U').charAt(0).toUpperCase();
@@ -141,9 +141,6 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
             <View style={styles.headerActionsGroup}>
               <TouchableOpacity activeOpacity={0.85} style={styles.headerIconButtonPrimary}>
                 <Feather color={palette.icon} name="bell" size={16} />
-              </TouchableOpacity>
-              <TouchableOpacity activeOpacity={0.85} style={styles.headerIconButtonPrimary}>
-                <MaterialCommunityIcons color={palette.icon} name="dots-vertical" size={16} />
               </TouchableOpacity>
             </View>
           </View>
@@ -191,6 +188,9 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
                 if (action.label === 'Add money' || action.label === 'Deposit' || action.label === 'Help') {
                   onOpenDeposit?.();
                 }
+                if (action.label === 'Pay bills') {
+                  onTabPress?.('payments');
+                }
               }}
             />
           ))}
@@ -214,6 +214,8 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
               onPress={() => {
                 if (service.label === 'Data') onOpenData?.();
                 if (service.label === 'Airtime') onOpenAirtime?.();
+                if (service.label === 'Electricity') onOpenElectricity?.();
+                if (service.label === 'TV') onOpenTvcable?.();
               }}
             />
           ))}

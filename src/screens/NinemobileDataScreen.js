@@ -3,6 +3,7 @@ import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Moda
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { getPalette } from '../styles/GlobalStyles';
+import VerifiedNumberSuggest, { saveVerifiedNumber } from '../components/VerifiedNumberSuggest';
 
 const DUMMY_PACKAGES = [
   { id: 'p1', title: '500MB - 1 Day', subtitle: 'Small daily bundle' },
@@ -15,7 +16,7 @@ export default function NinemobileDataScreen({ user, onBack, themeMode = 'dark',
   const palette = getPalette(themeMode);
   const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
   const barBgColor = themeMode === 'light' ? '#fff' : '#000';
-  const [phone, setPhone] = useState(user?.phone || '');
+  const [phone, setPhone] = useState('');
   const [verified, setVerified] = useState(false);
   const [verifyError, setVerifyError] = useState('');
   const [packagesVisible, setPackagesVisible] = useState(false);
@@ -83,6 +84,7 @@ export default function NinemobileDataScreen({ user, onBack, themeMode = 'dark',
       setVerified(true);
       setPackagesVisible(true);
       setVerifyError('');
+      saveVerifiedNumber('ninemobile', normal);
     } else {
       setVerified(false);
       setVerifyError('Not a 9mobile number');
@@ -194,6 +196,7 @@ export default function NinemobileDataScreen({ user, onBack, themeMode = 'dark',
 
       <View style={styles.content}>
         <View style={[styles.card, { backgroundColor: palette.surface }]}> 
+          <VerifiedNumberSuggest provider="ninemobile" query={phone} onSelect={(n) => setPhone(n)} />
           <Text style={[styles.label, { color: palette.textMuted }]}>Phone Number</Text>
           <View style={styles.row}>
             <TextInput
@@ -202,6 +205,10 @@ export default function NinemobileDataScreen({ user, onBack, themeMode = 'dark',
               placeholder="Phone number"
               placeholderTextColor={palette.textMuted}
               keyboardType="phone-pad"
+              autoComplete="off"
+              autoCorrect={false}
+              textContentType="none"
+              importantForAutofill="no"
               style={[styles.input, { color: palette.text, backgroundColor: palette.surface }]}
             />
             <TouchableOpacity style={[styles.verifyButton, { backgroundColor: palette.primary }]} onPress={verifyNumber}>
