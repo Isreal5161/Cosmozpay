@@ -1,5 +1,6 @@
 import React from 'react';
 import { SafeAreaView, View, Text, TouchableOpacity, FlatList, StyleSheet, Image, Platform, StatusBar as RNStatusBar } from 'react-native';
+import getSafeTop from '../utils/getSafeTop';
 import { Feather } from '@expo/vector-icons';
 import { getPalette } from '../styles/GlobalStyles';
 
@@ -76,7 +77,7 @@ export default function ElectricityScreen({ user, onBack, themeMode = 'dark', on
     );
   }
 
-  const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
+  const safeTop = getSafeTop();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.background, paddingTop: safeTop }]}> 

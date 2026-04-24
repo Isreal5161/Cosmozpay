@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Platform, StatusBar as RNStatusBar, ScrollView, KeyboardAvoidingView, Modal, FlatList } from 'react-native';
+import getSafeTop from '../utils/getSafeTop';
 import { Feather } from '@expo/vector-icons';
 import { getPalette } from '../styles/GlobalStyles';
 
@@ -23,7 +24,7 @@ const BANKS = [
 
 export default function SendMoneyScreen({ user, onBack, themeMode = 'dark', onOpenDeposit, onSuccess, prefillAmount, prefillToAccount, prefillBank, prefillAccountNumber, prefillNote }) {
   const palette = getPalette(themeMode);
-  const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
+  const safeTop = getSafeTop();
 
   const [toAccount, setToAccount] = useState(prefillToAccount || '');
   const [accountNumber, setAccountNumber] = useState(prefillAccountNumber || '');
@@ -48,7 +49,7 @@ export default function SendMoneyScreen({ user, onBack, themeMode = 'dark', onOp
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
-      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: safeTop + 8 }]}> 
+      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: safeTop + 6 }]}> 
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Feather name="chevron-left" size={20} color={palette.text} />
         </TouchableOpacity>

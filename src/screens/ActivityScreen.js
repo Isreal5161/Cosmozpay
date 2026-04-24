@@ -1,8 +1,9 @@
 import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getActivityScreenStyles, getPalette } from '../styles/GlobalStyles';
+import getSafeTop from '../utils/getSafeTop';
 
 const activities = [
   {
@@ -91,15 +92,16 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
 export default function ActivityScreen({ activeTab = 'activity', onTabPress, themeMode = 'dark' }) {
   const palette = getPalette(themeMode);
   const styles = getActivityScreenStyles(palette);
+  const safeTop = getSafeTop();
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[0]}
       >
-        <View style={styles.stickyHeaderWrap}>
+        <View style={[styles.stickyHeaderWrap, { paddingTop: safeTop + 6 }]}>
           <View style={styles.headerRow}>
             <View>
               <Text style={styles.headerEyebrow}>Activity</Text>
@@ -141,6 +143,6 @@ export default function ActivityScreen({ activeTab = 'activity', onTabPress, the
           />
         ))}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

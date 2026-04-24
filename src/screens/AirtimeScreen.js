@@ -1,5 +1,6 @@
 import React from 'react';
 import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, FlatList, Platform, StatusBar as RNStatusBar, Image } from 'react-native';
+import getSafeTop from '../utils/getSafeTop';
 import { Feather } from '@expo/vector-icons';
 import { getPalette } from '../styles/GlobalStyles';
 
@@ -37,7 +38,7 @@ const operators = [
 export default function AirtimeScreen({ user, onBack, themeMode = 'dark', onOpenOperator }) {
   const palette = getPalette(themeMode);
 
-  const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
+  const safeTop = getSafeTop();
 
   function renderOperator({ item }) {
     return (
@@ -64,7 +65,7 @@ export default function AirtimeScreen({ user, onBack, themeMode = 'dark', onOpen
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
-      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: 0 }]}> 
+      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: safeTop + 6 }]}> 
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Feather name="chevron-left" size={20} color={palette.text} />
         </TouchableOpacity>

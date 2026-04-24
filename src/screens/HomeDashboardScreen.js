@@ -1,8 +1,9 @@
 import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View, Image } from 'react-native';
+import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, Image } from 'react-native';
 // import { StatusBar } from 'expo-status-bar';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getHomeDashboardStyles, getPalette } from '../styles/GlobalStyles';
+import getSafeTop from '../utils/getSafeTop';
 
 const quickActions = [
   { label: 'Save money', icon: 'save' },
@@ -113,9 +114,10 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
   const palette = getPalette(themeMode);
   const styles = getHomeDashboardStyles(palette);
   const initial = (user?.name || 'U').charAt(0).toUpperCase();
+  const safeTop = getSafeTop();
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
       
       <ScrollView
         contentContainerStyle={styles.content}
@@ -123,7 +125,7 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
         stickyHeaderIndices={[0]}
       >
         {/* HEADER */}
-        <View style={styles.stickyHeaderWrap}>
+        <View style={[styles.stickyHeaderWrap, { paddingTop: safeTop + 6 }]}>
           <View style={styles.headerRow}>
               <View style={styles.profileAvatar}>
                 {user?.avatar ? (
@@ -260,6 +262,6 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
           />
         ))}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

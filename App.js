@@ -78,7 +78,9 @@ export default function App() {
     // Update native bar style (dark-content / light-content)
     RNStatusBar.setBarStyle(themeMode === 'light' ? 'dark-content' : 'light-content', true);
     if (Platform.OS === 'android') {
-      RNStatusBar.setBackgroundColor(palette.bottomBar, true);
+      const bg = themeMode === 'dark' ? '#000000' : palette.bottomBar;
+      RNStatusBar.setBackgroundColor(bg, true);
+      RNStatusBar.setTranslucent(false);
     }
   }, [themeMode, palette.bottomBar]);
 
@@ -474,9 +476,9 @@ export default function App() {
     <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
       {/* force re-render of expo StatusBar when theme changes via key */}
       <StatusBar
-        key={themeMode}
+        key={`${themeMode}-${activeTab}`}
         style={themeMode === 'light' ? 'dark' : 'light'}
-        backgroundColor={palette.bottomBar}
+        backgroundColor={themeMode === 'dark' ? '#000000' : palette.bottomBar}
         translucent={false}
       />
       <Animated.View

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Platform, StatusBar as RNStatusBar, ScrollView, KeyboardAvoidingView } from 'react-native';
+import getSafeTop from '../utils/getSafeTop';
 import { Feather } from '@expo/vector-icons';
 import { getPalette } from '../styles/GlobalStyles';
 
@@ -11,7 +12,7 @@ const PLANS = [
 
 export default function NetflixProviderScreen({ user, onBack, themeMode = 'dark', onOpenDeposit, onSuccess }) {
   const palette = getPalette(themeMode);
-  const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
+  const safeTop = getSafeTop();
 
   const [selected, setSelected] = useState(PLANS[0].key);
   const [months, setMonths] = useState('1');
@@ -23,7 +24,7 @@ export default function NetflixProviderScreen({ user, onBack, themeMode = 'dark'
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
-      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: safeTop + 8 }]}> 
+      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: safeTop + 6 }]}> 
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Feather name="chevron-left" size={20} color={palette.text} />
         </TouchableOpacity>

@@ -1,14 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView, View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getPalette } from '../styles/GlobalStyles';
 import { Feather } from '@expo/vector-icons';
+import getSafeTop from '../utils/getSafeTop';
 
 export default function HelpChatScreen({ user, onBack, themeMode = 'light' }) {
   const palette = getPalette(themeMode);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const listRef = useRef(null);
+  const safeTop = getSafeTop();
 
   useEffect(() => {
     (async () => {
@@ -60,8 +62,8 @@ export default function HelpChatScreen({ user, onBack, themeMode = 'light' }) {
   }
 
   return (
-    <View style={[styles.screen, { backgroundColor: palette.background }]}> 
-      <View style={[styles.header, { borderBottomColor: palette.border }]}> 
+    <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
+      <View style={[styles.header, { borderBottomColor: palette.border, paddingTop: safeTop + 6 }]}> 
         <TouchableOpacity onPress={() => onBack?.()} style={styles.backButton}><Feather name="chevron-left" size={20} color={palette.text} /></TouchableOpacity>
         <Text style={[styles.headerTitle, { color: palette.text }]}>Help & Support</Text>
         <View style={{ width: 40 }} />
@@ -91,7 +93,7 @@ export default function HelpChatScreen({ user, onBack, themeMode = 'light' }) {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 

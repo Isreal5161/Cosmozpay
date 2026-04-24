@@ -1,8 +1,9 @@
 import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 // import { StatusBar } from 'expo-status-bar';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getPalette, getPaymentScreenStyles } from '../styles/GlobalStyles';
+import getSafeTop from '../utils/getSafeTop';
 
 const paymentServices = [
   { label: 'Data Bundle', icon: 'signal-cellular-2', tint: '#FF8D85' },
@@ -50,16 +51,17 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
 export default function PaymentsScreen({ activeTab = 'payments', onTabPress, themeMode = 'dark', onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenAirtimeToCash, onOpenEducation, onOpenNetflix, onOpenSendMoney }) {
   const palette = getPalette(themeMode);
   const styles = getPaymentScreenStyles(palette);
+  const safeTop = getSafeTop();
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
       
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[0]}
       >
-        <View style={styles.stickyHeaderWrap}>
+        <View style={[styles.stickyHeaderWrap, { paddingTop: safeTop + 6 }]}>
           <View style={styles.headerRow}>
             <View>
               <Text style={styles.headerEyebrow}>Payments</Text>
@@ -123,6 +125,6 @@ export default function PaymentsScreen({ activeTab = 'payments', onTabPress, the
           />
         ))}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, Platform, StatusBar as RNStatusBar, Alert } from 'react-native';
+import getSafeTop from '../utils/getSafeTop';
 import { Feather } from '@expo/vector-icons';
 import { getPalette } from '../styles/GlobalStyles';
 
@@ -20,11 +21,11 @@ export default function SecurityScreen({ user, setUser, onBack, themeMode = 'dar
     onBack?.();
   }
 
-  const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight || 24) : 0;
+  const safeTop = getSafeTop();
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
-      <View style={[styles.header, { backgroundColor: palette.surfaceRaised }]}> 
+      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: safeTop + 6 }]}> 
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Feather name="chevron-left" size={20} color={palette.text} />
         </TouchableOpacity>

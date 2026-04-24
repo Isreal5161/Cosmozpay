@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { getPalette } from '../styles/GlobalStyles';
+import getSafeTop from '../utils/getSafeTop';
 
 export default function RewardsScreen({ user, onBack, themeMode = 'dark', onOpenDeposit, onSuccess, onOpenSendMoneyPrefill }) {
   const palette = getPalette(themeMode);
@@ -14,10 +15,11 @@ export default function RewardsScreen({ user, onBack, themeMode = 'dark', onOpen
 
   const parsed = Number((convertAmount || '').replace(/[^0-9.]/g, '')) || 0;
   const canConvert = parsed > 0 && parsed <= commission;
+  const safeTop = getSafeTop();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
-      <View style={[styles.header, { backgroundColor: palette.surfaceRaised }]}> 
+    <SafeAreaView style={[styles.container, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
+      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: safeTop + 12 }]}> 
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Feather name="chevron-left" size={20} color={palette.text} />
         </TouchableOpacity>

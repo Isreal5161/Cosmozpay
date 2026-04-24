@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, Switch, Text, TouchableOpacity, View, Modal, Alert } from 'react-native';
+import { SafeAreaView, ScrollView, Switch, Text, TouchableOpacity, View, Modal, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { getPalette, getProfileScreenStyles } from '../styles/GlobalStyles';
+import getSafeTop from '../utils/getSafeTop';
 
 const bottomTabs = [
   { key: 'home', label: 'Home', icon: 'home' },
@@ -76,6 +77,7 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
 export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThemeModeChange, themeMode = 'dark', onOpenPersonalDetails, onOpenSecurity, onOpenHelp, onOpenVerification, onSignOut, user = { name: 'User', email: '' } }) {
   const palette = getPalette(themeMode);
   const styles = getProfileScreenStyles(palette);
+  const safeTop = getSafeTop();
   const isLightMode = themeMode === 'light';
 
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
@@ -105,14 +107,14 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
   const tierBadgeTextColor = '#FFFFFF';
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
       
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[0]}
       >
-        <View style={styles.stickyHeaderWrap}>
+        <View style={[styles.stickyHeaderWrap, { paddingTop: safeTop + 6 }]}>
           <View style={styles.headerRow}>
             <View>
               <Text style={styles.headerEyebrow}>Profile</Text>
@@ -300,6 +302,6 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
           />
         ))}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

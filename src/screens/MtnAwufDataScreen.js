@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, FlatList, Image, Platform, StatusBar as RNStatusBar, Animated } from 'react-native';
+import getSafeTop from '../utils/getSafeTop';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { getPalette } from '../styles/GlobalStyles';
@@ -13,7 +14,7 @@ const DUMMY_PACKAGES = [
 
 export default function MtnAwufDataScreen({ user, onBack, themeMode = 'dark', onOpenDeposit, onSuccess }) {
   const palette = getPalette(themeMode);
-  const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
+  const safeTop = getSafeTop();
   const barBgColor = themeMode === 'light' ? '#fff' : '#000';
   const [phone, setPhone] = useState('');
   const [verified, setVerified] = useState(false);
@@ -166,7 +167,7 @@ export default function MtnAwufDataScreen({ user, onBack, themeMode = 'dark', on
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
-      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: 6 }]}> 
+      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: safeTop + 6 }]}> 
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Feather name="chevron-left" size={20} color={palette.text} />
         </TouchableOpacity>

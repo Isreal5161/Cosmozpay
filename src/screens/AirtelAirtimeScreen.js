@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Animated, Image, Platform, StatusBar as RNStatusBar, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import getSafeTop from '../utils/getSafeTop';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { getPalette } from '../styles/GlobalStyles';
@@ -8,7 +9,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 
 export default function AirtelAirtimeScreen({ user, onBack, themeMode = 'dark', onOpenDeposit, onSuccess }) {
   const palette = getPalette(themeMode);
-  const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
+  const safeTop = getSafeTop();
   const [phone, setPhone] = useState('');
   const [verified, setVerified] = useState(false);
   const [verifyError, setVerifyError] = useState('');
@@ -130,7 +131,7 @@ export default function AirtelAirtimeScreen({ user, onBack, themeMode = 'dark', 
   const proceedLabel = !phone ? 'Insert number' : (numericAmount <= 0 ? 'Enter amount' : 'Proceed');
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
-      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: 6 }]}> 
+      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: safeTop + 6 }]}> 
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Feather name="chevron-left" size={20} color={palette.text} />
         </TouchableOpacity>

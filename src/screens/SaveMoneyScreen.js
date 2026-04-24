@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getPalette } from '../styles/GlobalStyles';
+import getSafeTop from '../utils/getSafeTop';
 
 export default function SaveMoneyScreen({ user, onBack, onSaved, themeMode = 'light' }) {
   const palette = getPalette(themeMode);
+  const safeTop = getSafeTop();
   const [amount, setAmount] = useState('');
   const [frequency, setFrequency] = useState('monthly'); // daily, weekly, monthly
   const [durationMonths, setDurationMonths] = useState('3');
@@ -39,8 +41,8 @@ export default function SaveMoneyScreen({ user, onBack, onSaved, themeMode = 'li
   }
 
   return (
-    <View style={[styles.screen, { backgroundColor: palette.background }]}> 
-      <View style={styles.headerRow}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
+      <View style={[styles.headerRow, { paddingTop: safeTop + 12 }]}>
         <TouchableOpacity onPress={() => onBack?.()} style={styles.backButton}>
           <Text style={{ color: palette.textMuted }}>Back</Text>
         </TouchableOpacity>
@@ -73,13 +75,13 @@ export default function SaveMoneyScreen({ user, onBack, onSaved, themeMode = 'li
 
         <Text style={[styles.hint, { color: palette.textMuted }]}>This will create an automatic savings plan. You can manage your plans in the Savings section.</Text>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: Platform.OS === 'android' ? 16 : 28 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
   backButton: { padding: 8 },
   title: { fontSize: 18, fontWeight: '800' },
   content: { paddingHorizontal: 16, paddingTop: 8 },

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Platform, StatusBar as RNStatusBar, ScrollView, KeyboardAvoidingView, Image } from 'react-native';
+import getSafeTop from '../utils/getSafeTop';
 import { Feather } from '@expo/vector-icons';
 import { getPalette } from '../styles/GlobalStyles';
 
@@ -27,7 +28,7 @@ export default function TvCableProviderScreen({ user, onBack, themeMode = 'dark'
   const inputLabel = requiresAlpha ? 'Decoder ID / Smartcard' : 'Smartcard Number';
   const inputPlaceholder = requiresAlpha ? 'Enter decoder IUC/UID (e.g. IUC12345)' : 'Smartcard Number';
   const deliveryRate = 88;
-  const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
+  const safeTop = getSafeTop();
 
   const TV_PACKAGES = {
     dstv: [
@@ -56,7 +57,7 @@ export default function TvCableProviderScreen({ user, onBack, themeMode = 'dark'
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
-      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: safeTop + 8 }]}> 
+      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: safeTop + 6 }]}> 
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Feather name="chevron-left" size={20} color={palette.text} />
         </TouchableOpacity>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { SafeAreaView, View, Text, TouchableOpacity, FlatList, StyleSheet, Image, Platform, StatusBar as RNStatusBar } from 'react-native';
+import getSafeTop from '../utils/getSafeTop';
 import { Feather } from '@expo/vector-icons';
 import { getPalette } from '../styles/GlobalStyles';
 
@@ -18,7 +19,7 @@ const PROVIDER_LOGOS = {
 
 export default function TvCableScreen({ user, onBack, themeMode = 'dark', onSelectProvider, onOpenDeposit }) {
   const palette = getPalette(themeMode);
-  const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
+  const safeTop = getSafeTop();
 
   function renderItem({ item }) {
     const initials = item.label.split(' ').map((w) => w[0]).slice(0,2).join('').toUpperCase();
