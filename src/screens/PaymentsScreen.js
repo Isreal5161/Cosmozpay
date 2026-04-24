@@ -7,12 +7,12 @@ import { getPalette, getPaymentScreenStyles } from '../styles/GlobalStyles';
 const paymentServices = [
   { label: 'Data Bundle', icon: 'signal-cellular-2', tint: '#FF8D85' },
   { label: 'Airtime Topup', icon: 'phone-outline', tint: '#8A4DFF' },
+  { label: 'Airtime to Cash', icon: 'cash', tint: '#4CAF50' },
   { label: 'Education', icon: 'school-outline', tint: '#58B8FF' },
   { label: 'Netflix', icon: 'netflix', tint: '#F45B5B' },
-  { label: 'Exam Pin', icon: 'card-account-details-outline', tint: '#F5B544' },
   { label: 'Cable TV', icon: 'television-play', tint: '#6DDB88' },
   { label: 'Electricity', icon: 'flash-outline', tint: '#FFBF47' },
-  { label: 'Streaming', icon: 'play-box-multiple-outline', tint: '#7A8CFF' },
+  
 ];
 
 const bottomTabs = [
@@ -23,11 +23,11 @@ const bottomTabs = [
   { key: 'profile', label: 'Profile', icon: 'grid' },
 ];
 
-function PaymentCard({ icon, label, tint, palette, styles, onPress }) {
+function PaymentCard({ icon, label, tint, palette, styles, onPress, size = 18 }) {
   return (
     <TouchableOpacity activeOpacity={0.85} style={styles.serviceCard} onPress={onPress}>
       <View style={[styles.serviceIconShell, { backgroundColor: tint }]}>
-        <MaterialCommunityIcons color={palette.background} name={icon} size={18} />
+        <MaterialCommunityIcons color={palette.background} name={icon} size={size} />
       </View>
       <Text style={styles.serviceCardLabel}>{label}</Text>
     </TouchableOpacity>
@@ -47,7 +47,7 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
   );
 }
 
-export default function PaymentsScreen({ activeTab = 'payments', onTabPress, themeMode = 'dark', onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable }) {
+export default function PaymentsScreen({ activeTab = 'payments', onTabPress, themeMode = 'dark', onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenAirtimeToCash, onOpenEducation, onOpenNetflix, onOpenSendMoney }) {
   const palette = getPalette(themeMode);
   const styles = getPaymentScreenStyles(palette);
 
@@ -83,7 +83,7 @@ export default function PaymentsScreen({ activeTab = 'payments', onTabPress, the
               <Text style={styles.primaryButtonText}>Add money</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.85} style={styles.secondaryButton}>
+            <TouchableOpacity activeOpacity={0.85} style={styles.secondaryButton} onPress={() => onOpenSendMoney?.()}>
               <Feather color={palette.text} name="arrow-up-right" size={16} />
               <Text style={styles.secondaryButtonText}>Send money</Text>
             </TouchableOpacity>
@@ -99,9 +99,13 @@ export default function PaymentsScreen({ activeTab = 'payments', onTabPress, the
             let handler;
             if (item.label === 'Data Bundle') handler = () => onOpenData?.();
             if (item.label === 'Airtime Topup') handler = () => onOpenAirtime?.();
+            if (item.label === 'Airtime to Cash') handler = () => onOpenAirtimeToCash?.();
+            if (item.label === 'Education') handler = () => onOpenEducation?.();
             if (item.label === 'Electricity') handler = () => onOpenElectricity?.();
+            if (item.label === 'Netflix') handler = () => onOpenNetflix?.();
             if (item.label === 'Cable TV') handler = () => onOpenTvcable?.();
-            return <PaymentCard key={item.label} palette={palette} styles={styles} {...item} onPress={handler} />;
+            const smallIcon = item.label === 'Data Bundle' || item.label === 'Airtime Topup';
+            return <PaymentCard key={item.label} palette={palette} styles={styles} {...item} onPress={handler} size={smallIcon ? 14 : 18} />;
           })}
         </View>
       </ScrollView>

@@ -11,8 +11,7 @@
     "icon": "./public/Cosmozpaylogo.jpeg",
     "android": {
       "package": "com.cosmozpay.app",
-      "versionCode": 1
-      ,
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./public/Cosmozpaylogo.jpeg",
         "backgroundColor": "#111111"
@@ -20,8 +19,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "1c3b0502-d726-4d91-97e1-79b08729349c"
+        "projectId": "c0f7b65d-74bc-4a9c-9d05-13b564b7eb61"
       }
-    }
+    },
+    "owner": "diateck"
   }
 }

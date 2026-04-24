@@ -67,6 +67,7 @@ export default function App() {
     }).start();
   }, [activeTab, showSplash, showWelcome, showLogin, translateY]);
   const [depositVisible, setDepositVisible] = React.useState(false);
+  const [sendPrefill, setSendPrefill] = React.useState(null);
   function openDeposit() { setDepositVisible(true); }
   function closeDeposit() { setDepositVisible(false); }
   const themeMode = isDarkMode ? 'dark' : 'light';
@@ -150,7 +151,20 @@ export default function App() {
 
   const currentScreen =
     activeTab === 'payments' ? (
-      <PaymentsScreen activeTab={activeTab} onTabPress={setActiveTab} themeMode={themeMode} onOpenDeposit={openDeposit} onOpenData={() => setFullScreen('data')} onOpenAirtime={() => setFullScreen('airtime')} onOpenElectricity={() => setFullScreen('electricity')} onOpenTvcable={() => setFullScreen('tvcable')} />
+      <PaymentsScreen
+        activeTab={activeTab}
+        onTabPress={setActiveTab}
+        themeMode={themeMode}
+        onOpenDeposit={openDeposit}
+        onOpenData={() => setFullScreen('data')}
+        onOpenAirtime={() => setFullScreen('airtime')}
+        onOpenAirtimeToCash={() => setFullScreen('airtime_to_cash')}
+        onOpenElectricity={() => setFullScreen('electricity')}
+        onOpenTvcable={() => setFullScreen('tvcable')}
+        onOpenEducation={() => setFullScreen('education')}
+        onOpenNetflix={() => setFullScreen('netflix')}
+        onOpenSendMoney={() => setFullScreen('sendmoney')}
+      />
     ) : activeTab === 'activity' ? (
       <ActivityScreen activeTab={activeTab} onTabPress={setActiveTab} themeMode={themeMode} />
     ) : activeTab === 'cards' ? (
@@ -172,10 +186,13 @@ export default function App() {
         themeMode={themeMode}
         user={user}
         onOpenDeposit={openDeposit}
-        onOpenData={() => setFullScreen('data')}
+          onOpenData={() => setFullScreen('data')}
         onOpenAirtime={() => setFullScreen('airtime')}
+        onOpenAirtimeToCash={() => setFullScreen('airtime_to_cash')}
         onOpenElectricity={() => setFullScreen('electricity')}
         onOpenTvcable={() => setFullScreen('tvcable')}
+          onOpenRewards={() => setFullScreen('rewards')}
+          onOpenSave={() => setFullScreen('save')}
       />
     );
 
@@ -284,6 +301,14 @@ export default function App() {
       </SafeAreaView>
     );
   }
+  if (fullScreen === 'save') {
+    const SaveMoneyScreen = require('./src/screens/SaveMoneyScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
+        <SaveMoneyScreen user={user} onBack={() => setFullScreen(null)} onSaved={(p) => { setFullScreen(null); }} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
   if (fullScreen === 'electricity') {
     const ElectricityScreen = require('./src/screens/ElectricityScreen').default;
     return (
@@ -298,6 +323,56 @@ export default function App() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
         <TvCableScreen user={user} onBack={() => setFullScreen(null)} themeMode={themeMode} onOpenDeposit={openDeposit} onSelectProvider={(p)=>{ setFullScreen('tvcable_provider_'+p.key); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+
+  if (fullScreen === 'education') {
+    const EducationProviderScreen = require('./src/screens/EducationProviderScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
+        <EducationProviderScreen user={user} onBack={() => setFullScreen(null)} themeMode={themeMode} onOpenDeposit={openDeposit} onSuccess={(p) => { setSuccessPayload(p); setFullScreen('success'); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+
+  if (fullScreen === 'netflix') {
+    const NetflixProviderScreen = require('./src/screens/NetflixProviderScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
+        <NetflixProviderScreen user={user} onBack={() => setFullScreen(null)} themeMode={themeMode} onOpenDeposit={openDeposit} onSuccess={(p) => { setSuccessPayload(p); setFullScreen('success'); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+
+  if (fullScreen === 'rewards') {
+    const RewardsScreen = require('./src/screens/RewardsScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
+        <RewardsScreen user={user} onBack={() => setFullScreen(null)} themeMode={themeMode} onOpenDeposit={openDeposit} onSuccess={(p) => { setSuccessPayload(p); setFullScreen('success'); }} onOpenSendMoneyPrefill={(p) => { setSendPrefill(p); setFullScreen('sendmoney'); }} onOpenNetflix={() => setFullScreen('netflix')} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+
+  if (fullScreen === 'sendmoney') {
+    const SendMoneyScreen = require('./src/screens/SendMoneyScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
+        <SendMoneyScreen user={user} onBack={() => { setSendPrefill(null); setFullScreen(null); }} themeMode={themeMode} onOpenDeposit={openDeposit} prefillAmount={sendPrefill?.amount} prefillToAccount={sendPrefill?.to} prefillBank={sendPrefill?.bank} prefillAccountNumber={sendPrefill?.accountNumber} prefillNote={sendPrefill?.note} onSuccess={(p) => { setSuccessPayload(p); setSendPrefill(null); setFullScreen('success'); }} />
+        <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+
+  if (fullScreen === 'airtime_to_cash') {
+    const AirtimeToCashScreen = require('./src/screens/AirtimeToCashScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <AirtimeToCashScreen user={user} onBack={() => setFullScreen(null)} themeMode={themeMode} onSuccess={(p)=>{ setSuccessPayload(p); setFullScreen('success'); }} />
         <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
       </SafeAreaView>
     );
@@ -377,12 +452,14 @@ export default function App() {
         style={[
           styles.screenWrap,
           {
+            backgroundColor: palette.background,
             transform: [{ translateY }],
           },
         ]}
       >
         {currentScreen}
       </Animated.View>
+      {/* hide global floating overlays when welcome/login/signup/splash are visible */}
       <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
     </SafeAreaView>
   );

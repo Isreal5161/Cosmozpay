@@ -692,7 +692,7 @@ export function getPaymentScreenStyles(palette) {
   },
   serviceIconShell: {
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: 8,
     height: 44,
     justifyContent: 'center',
     marginBottom: 16,

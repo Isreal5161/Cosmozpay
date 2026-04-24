@@ -109,7 +109,7 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
   );
 }
 
-export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, themeMode = 'dark', user = { name: 'Diateck', avatar: null }, onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable }) {
+export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, themeMode = 'dark', user = { name: 'Diateck', avatar: null }, onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenRewards, onOpenSave }) {
   const palette = getPalette(themeMode);
   const styles = getHomeDashboardStyles(palette);
   const initial = (user?.name || 'U').charAt(0).toUpperCase();
@@ -168,7 +168,7 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
                 <TouchableOpacity style={styles.balanceActionButtonPrimary} onPress={() => onOpenDeposit?.()}>
                   <Text style={styles.balanceActionButtonPrimaryText}>Deposit</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.balanceActionButtonSecondary}>
+                <TouchableOpacity style={styles.balanceActionButtonSecondary} onPress={() => onOpenRewards?.()}>
                   <Text style={styles.balanceActionButtonSecondaryText}>Reward</Text>
                 </TouchableOpacity>
                 </View>
@@ -185,13 +185,17 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
               styles={styles}
               {...action}
               onPress={() => {
-                if (action.label === 'Add money' || action.label === 'Deposit' || action.label === 'Help') {
-                  onOpenDeposit?.();
-                }
-                if (action.label === 'Pay bills') {
-                  onTabPress?.('payments');
-                }
-              }}
+                  if (action.label === 'Save money') {
+                    onOpenSave?.();
+                    return;
+                  }
+                  if (action.label === 'Add money' || action.label === 'Deposit' || action.label === 'Help') {
+                    onOpenDeposit?.();
+                  }
+                  if (action.label === 'Pay bills') {
+                    onTabPress?.('payments');
+                  }
+                }}
             />
           ))}
         </View>

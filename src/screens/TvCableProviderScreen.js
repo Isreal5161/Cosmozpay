@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Platform, StatusBar as RNStatusBar, ScrollView, KeyboardAvoidingView } from 'react-native';
+import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Platform, StatusBar as RNStatusBar, ScrollView, KeyboardAvoidingView, Image } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { getPalette } from '../styles/GlobalStyles';
 
@@ -9,16 +9,50 @@ const PROVIDER_LABELS = {
   gotv: 'GoTV',
 };
 
+const PROVIDER_LOGOS = {
+  startimes: require('../../public/Startimes.png'),
+  dstv: require('../../public/Dstv.png'),
+  gotv: require('../../public/Gotv.png'),
+};
+
 export default function TvCableProviderScreen({ user, onBack, themeMode = 'dark', providerKey, onOpenDeposit, onSuccess }) {
   const palette = getPalette(themeMode);
   const label = PROVIDER_LABELS[providerKey] || providerKey;
+  const logo = PROVIDER_LOGOS[providerKey];
   const [smartcard, setSmartcard] = useState('');
-  // provider-specific input behavior: GoTV sometimes requires an alphanumeric decoder IUC/UID
-  const requiresAlpha = providerKey === 'gotv';
+  const [packagesVisible, setPackagesVisible] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  // provider-specific input behavior: GoTV and StarTimes may require an alphanumeric decoder IUC/UID
+  const requiresAlpha = providerKey === 'gotv' || providerKey === 'startimes';
   const inputLabel = requiresAlpha ? 'Decoder ID / Smartcard' : 'Smartcard Number';
   const inputPlaceholder = requiresAlpha ? 'Enter decoder IUC/UID (e.g. IUC12345)' : 'Smartcard Number';
   const deliveryRate = 88;
   const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
+
+  const TV_PACKAGES = {
+    dstv: [
+      { id: 'dstv_premium', title: 'DStv Premium', price: 31900 },
+      { id: 'dstv_compact_plus', title: 'DStv Compact Plus', price: 16750 },
+      { id: 'dstv_compact', title: 'DStv Compact', price: 9250 },
+      { id: 'dstv_confam', title: 'DStv Confam', price: 4100 },
+      { id: 'dstv_yanga', title: 'DStv Yanga', price: 2350 },
+      { id: 'dstv_padi', title: 'DStv Padi', price: 700 },
+    ],
+    gotv: [
+      { id: 'gotv_max', title: 'GOtv Max', price: 5200 },
+      { id: 'gotv_supra', title: 'GOtv Supa', price: 2850 },
+      { id: 'gotv_jolli', title: 'GOtv Jolli', price: 1400 },
+      { id: 'gotv_jinja', title: 'GOtv Jinja', price: 700 },
+    ],
+    startimes: [
+      { id: 'startimes_platinum', title: 'StarTimes Platinum', price: 15000 },
+      { id: 'startimes_gold', title: 'StarTimes Gold', price: 7500 },
+      { id: 'startimes_silver', title: 'StarTimes Silver', price: 2500 },
+      { id: 'startimes_basic', title: 'StarTimes Basic', price: 725 },
+    ],
+  };
+
+  const providerPackages = TV_PACKAGES[providerKey] || [];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
@@ -42,12 +76,19 @@ export default function TvCableProviderScreen({ user, onBack, themeMode = 'dark'
           </View>
 
           <View style={styles.content}> 
-            <Text style={[styles.sectionTitle, { color: palette.text }]}>Pay Subscription</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {logo ? (
+                <Image source={logo} style={styles.providerLogo} resizeMode="contain" />
+              ) : null}
+              <Text style={[styles.sectionTitle, { color: palette.text, flex: 1, textAlign: 'left' }]} numberOfLines={1} ellipsizeMode="tail">{`Pay Subscription`}</Text>
+            </View>
 
             <View style={styles.progressWrap}>
-              <View style={styles.progressBarBg}>
-                <View style={[styles.progressBarFill, { width: `${deliveryRate}%`, backgroundColor: '#4caf50' }]} />
-                <View style={styles.progressCenterText}><Text style={[styles.progressText, { color: palette.text }]}>{`${deliveryRate}%`}</Text></View>
+              <View style={styles.progressRow}>
+                <View style={styles.progressBarBg}>
+                  <View style={[styles.progressBarFill, { width: `${deliveryRate}%`, backgroundColor: '#4caf50' }]} />
+                </View>
+                <Text style={[styles.progressPercent, { color: palette.text }]}>{`${deliveryRate}%`}</Text>
               </View>
               <Text style={[styles.providerText, { color: palette.textMuted }]}>{`${label} Delivery Rate Nationwide`}</Text>
             </View>
@@ -69,17 +110,58 @@ export default function TvCableProviderScreen({ user, onBack, themeMode = 'dark'
               </TouchableOpacity>
             </View>
             {requiresAlpha ? (
-              <Text style={[styles.helperText, { color: palette.textMuted, marginTop: 8 }]}>Some providers (e.g. GoTV) accept decoder IUC/UID which may include letters; paste or type the full code.</Text>
+              <Text style={[styles.helperText, { color: palette.textMuted, marginTop: 8 }]}>Some providers (e.g. GoTV and StarTimes) accept decoder IUC/UID which may include letters; paste or type the full code.</Text>
             ) : null}
 
             <Text style={[styles.chooseText, { color: '#E53935' }]}>Choose from your contacts</Text>
 
-            <TouchableOpacity style={[styles.proceedButton, { backgroundColor: palette.primary }]} onPress={() => onSuccess?.({ provider: providerKey, smartcard })}>
+            {providerPackages.length > 0 ? (
+              <>
+                <Text style={[styles.inputLabel, { color: palette.text, marginTop: 12 }]}>Selected package</Text>
+                <TouchableOpacity style={[styles.input, { backgroundColor: palette.surface, justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }]} onPress={() => setPackagesVisible(true)}>
+                  <Text style={{ color: palette.text }}>{selectedPackage ? `${selectedPackage.title} — ₦${selectedPackage.price.toLocaleString()}` : 'Choose a package'}</Text>
+                  <Feather name="chevron-down" size={16} color={palette.textMuted} />
+                </TouchableOpacity>
+                <Text style={[styles.inputLabel, { color: palette.text, marginTop: 12 }]}>Amount</Text>
+                <Text style={[styles.input, { paddingVertical: 14, backgroundColor: palette.surface }]}>{selectedPackage ? `₦${selectedPackage.price.toLocaleString()}` : '—'}</Text>
+              </>
+            ) : null}
+
+            <TouchableOpacity
+              style={[styles.proceedButton, { backgroundColor: (smartcard && (providerPackages.length === 0 || selectedPackage)) ? palette.primary : '#777' }]}
+              disabled={!smartcard || (providerPackages.length > 0 && !selectedPackage)}
+              onPress={() => onSuccess?.({ provider: providerKey, smartcard, selectedPackage, amount: selectedPackage ? selectedPackage.price : undefined, timestamp: Date.now() })}
+            >
               <Text style={styles.proceedText}>Proceed</Text>
             </TouchableOpacity>
+
+            
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {packagesVisible && (
+        <View style={styles.pkgModalBackdrop} pointerEvents="box-none">
+          <TouchableOpacity style={styles.backdropTouchable} onPress={() => setPackagesVisible(false)} />
+          <View style={[styles.pkgModal, { backgroundColor: palette.surface }]}> 
+            <Text style={[styles.modalTitle, { color: palette.text }]}>Select package</Text>
+            <ScrollView style={{ maxHeight: 360 }}>
+              {providerPackages.map((pkg) => (
+                <TouchableOpacity key={pkg.id} style={styles.pkgRow} onPress={() => { setSelectedPackage(pkg); setPackagesVisible(false); }}>
+                  <View>
+                    <Text style={{ color: palette.text, fontWeight: '800' }}>{pkg.title}</Text>
+                    <Text style={{ color: palette.textMuted, marginTop: 4 }}>{`₦${pkg.price.toLocaleString()}`}</Text>
+                  </View>
+                  <Feather name={selectedPackage?.id === pkg.id ? 'check-circle' : 'chevron-right'} size={20} color={palette.textMuted} />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={[styles.modalClose, { backgroundColor: palette.primary }]} onPress={() => setPackagesVisible(false)}>
+              <Text style={{ color: '#fff', fontWeight: '800' }}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -96,13 +178,16 @@ const styles = StyleSheet.create({
   balanceLabel: { fontSize: 12 },
   balanceAmount: { fontSize: 24, fontWeight: '800', marginBottom: 8 },
   content: { paddingHorizontal: 16 },
-  sectionTitle: { fontSize: 20, fontWeight: '800', marginTop: 6, marginBottom: 8 },
-  progressWrap: { marginVertical: 8, alignItems: 'center' },
-  progressBarBg: { width: '100%', height: 18, backgroundColor: '#dfe6e9', borderRadius: 8, overflow: 'hidden' },
-  progressBarFill: { height: '100%' },
-  progressText: { fontWeight: '700' },
+  sectionTitle: { fontSize: 18, fontWeight: '800', marginTop: 0, marginBottom: 8, flexShrink: 1 },
+  providerLogo: { width: 28, height: 28, marginRight: 10, borderRadius: 14 },
+  progressWrap: { marginVertical: 10, alignItems: 'stretch' },
+  progressBarBg: { flex: 1, height: 10, backgroundColor: '#dfe6e9', borderRadius: 2, overflow: 'hidden', marginRight: 8 },
+  progressBarFill: { height: '100%', borderRadius: 2 },
+  progressText: { fontWeight: '700', fontSize: 12 },
+  progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' },
+  progressPercent: { marginLeft: 8, fontWeight: '800', fontSize: 13, minWidth: 40, textAlign: 'right', marginTop: -2 },
   progressCenterText: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
-  providerText: { marginTop: 6, fontSize: 12, fontWeight: '700' },
+  providerText: { marginTop: 6, fontSize: 12, fontWeight: '700', textAlign: 'center', alignSelf: 'center' },
   inputLabel: { marginTop: 12, fontWeight: '700' },
   inputRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   input: { flex: 1, borderRadius: 10, padding: 14, fontSize: 16, marginRight: 8 },
@@ -111,4 +196,10 @@ const styles = StyleSheet.create({
   proceedButton: { marginTop: 18, alignSelf: 'center', paddingHorizontal: 40, paddingVertical: 12, borderRadius: 12 },
   proceedText: { color: '#fff', fontWeight: '800' },
   helperText: { fontSize: 12 },
+  pkgModalBackdrop: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.45)' },
+  backdropTouchable: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
+  pkgModal: { width: '90%', maxHeight: 500, borderRadius: 12, padding: 14 },
+  modalTitle: { fontSize: 16, fontWeight: '800', marginBottom: 8 },
+  pkgRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 6, borderBottomWidth: 1, borderColor: '#e6e6e6' },
+  modalClose: { marginTop: 12, alignSelf: 'center', paddingVertical: 10, paddingHorizontal: 26, borderRadius: 10 },
 });
