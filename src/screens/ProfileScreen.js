@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, Switch, Text, TouchableOpacity, View, Modal } from 'react-native';
+import { ScrollView, Switch, Text, TouchableOpacity, View, Modal, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { getPalette, getProfileScreenStyles } from '../styles/GlobalStyles';
@@ -73,7 +73,7 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
   );
 }
 
-export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThemeModeChange, themeMode = 'dark', onOpenPersonalDetails, onOpenSecurity, user = { name: 'User', email: '' } }) {
+export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThemeModeChange, themeMode = 'dark', onOpenPersonalDetails, onOpenSecurity, onOpenHelp, onOpenVerification, onSignOut, user = { name: 'User', email: '' } }) {
   const palette = getPalette(themeMode);
   const styles = getProfileScreenStyles(palette);
   const isLightMode = themeMode === 'light';
@@ -182,6 +182,9 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
                   if (row.title === 'Security') {
                     onOpenSecurity?.();
                   }
+                  if (row.title === 'Limits and verification') {
+                    onOpenVerification?.();
+                  }
                 }}
               />
               {index < profileRows.length - 1 ? <View style={styles.divider} /> : null}
@@ -193,7 +196,14 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
           <Text style={styles.sectionTitle}>Support</Text>
           {supportRows.map((row, index) => (
             <View key={row.title}>
-              <SettingRow palette={palette} styles={styles} {...row} />
+              <SettingRow palette={palette} styles={styles} {...row} onPress={() => {
+                if (row.title === 'Help center') {
+                  // open help chat
+                  if (typeof onOpenHelp === 'function') onOpenHelp();
+                  setSettingsModalVisible(false);
+                  return;
+                }
+              }} />
               {index < supportRows.length - 1 ? <View style={styles.divider} /> : null}
             </View>
           ))}
@@ -229,6 +239,49 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
                 trackColor={{ false: palette.border, true: palette.primary }}
                 thumbColor={biometricEnabled ? '#fff' : undefined}
               />
+            </View>
+            <View style={{ paddingVertical: 12 }}>
+              <TouchableOpacity
+                onPress={() => {
+                  Alert.alert(
+                    'Log out',
+                    'Are you sure you want to sign out of your account?',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Log out',
+                        style: 'destructive',
+                        onPress: async () => {
+                          try {
+                            const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+                            await AsyncStorage.removeItem('user');
+                          } catch (e) {
+                            // ignore
+                          }
+                          setSettingsModalVisible(false);
+                          if (typeof onSignOut === 'function') onSignOut();
+                        },
+                      },
+                    ],
+                    { cancelable: true }
+                  );
+                }}
+                style={{
+                  marginTop: 6,
+                  paddingVertical: 12,
+                  borderRadius: 10,
+                  backgroundColor: palette.surface,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: palette.border,
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  gap: 10,
+                }}
+              >
+                <Feather name="log-out" size={16} color={palette.error} />
+                <Text style={{ color: palette.error, fontWeight: '700' }}>Log out</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>

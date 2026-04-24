@@ -109,7 +109,7 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
   );
 }
 
-export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, themeMode = 'dark', user = { name: 'Diateck', avatar: null }, onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenRewards, onOpenSave }) {
+export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, themeMode = 'dark', user = { name: 'Diateck', avatar: null }, onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenRewards, onOpenSave, onOpenHelp }) {
   const palette = getPalette(themeMode);
   const styles = getHomeDashboardStyles(palette);
   const initial = (user?.name || 'U').charAt(0).toUpperCase();
@@ -189,8 +189,11 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
                     onOpenSave?.();
                     return;
                   }
-                  if (action.label === 'Add money' || action.label === 'Deposit' || action.label === 'Help') {
+                  if (action.label === 'Add money' || action.label === 'Deposit') {
                     onOpenDeposit?.();
+                  }
+                  if (action.label === 'Help') {
+                    onOpenHelp?.();
                   }
                   if (action.label === 'Pay bills') {
                     onTabPress?.('payments');

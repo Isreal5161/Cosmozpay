@@ -10,7 +10,7 @@ export default function LoginScreen({ onLogin, onBack, themeMode = 'light' }) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: '#FFFFFF' }]}> 
+    <SafeAreaView style={[styles.screen, { backgroundColor: palette.background }]}> 
       <View style={styles.container}>
         <Text style={[styles.title, { color: palette.text }]}>Welcome back</Text>
         <Text style={[styles.subtitle, { color: palette.textMuted }]}>Sign in to continue</Text>
@@ -45,7 +45,7 @@ export default function LoginScreen({ onLogin, onBack, themeMode = 'light' }) {
           activeOpacity={0.9}
           onPress={() => onLogin?.({ identifier })}
         >
-          <Text style={[styles.buttonText, { color: palette.iconOnPrimary }]}>Sign in</Text>
+          <Text style={[styles.buttonText, { color: palette.onPrimary || '#fff' }]}>Sign in</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.backLink} onPress={() => onBack?.()}>

@@ -178,6 +178,21 @@ export default function App() {
         user={user}
         onOpenPersonalDetails={() => setFullScreen('personalDetails')}
         onOpenSecurity={() => setFullScreen('security')}
+        onOpenHelp={() => setFullScreen('help')}
+        onOpenVerification={() => setFullScreen('verification')}
+        onSignOut={async () => {
+          try {
+            const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+            await AsyncStorage.removeItem('user');
+          } catch (e) {
+            // ignore
+          }
+          setShowLogin(true);
+          setShowSignup(false);
+          setShowWelcome(false);
+          setActiveTab('home');
+          setUser({ name: '', avatar: null, email: '', phone: '', balance: 0 });
+        }}
       />
     ) : (
       <HomeDashboardScreen
@@ -193,6 +208,7 @@ export default function App() {
         onOpenTvcable={() => setFullScreen('tvcable')}
           onOpenRewards={() => setFullScreen('rewards')}
           onOpenSave={() => setFullScreen('save')}
+          onOpenHelp={() => setFullScreen('help')}
       />
     );
 
@@ -298,6 +314,22 @@ export default function App() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
         <AirtimeScreen user={user} onBack={() => setFullScreen(null)} themeMode={themeMode} onOpenOperator={(op) => setFullScreen(op + '_airtime')} />
+      </SafeAreaView>
+    );
+  }
+  if (fullScreen === 'help') {
+    const HelpChatScreen = require('./src/screens/HelpChatScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
+        <HelpChatScreen user={user} onBack={() => setFullScreen(null)} themeMode={themeMode} />
+      </SafeAreaView>
+    );
+  }
+  if (fullScreen === 'verification') {
+    const VerificationScreen = require('./src/screens/VerificationScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
+        <VerificationScreen user={user} onBack={() => setFullScreen(null)} themeMode={themeMode} />
       </SafeAreaView>
     );
   }
