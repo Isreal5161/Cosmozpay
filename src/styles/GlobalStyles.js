@@ -205,6 +205,12 @@ export function getHomeDashboardStyles(palette) {
       fontSize: 18,
       fontWeight: '700',
     },
+    profileAvatarImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 999,
+      resizeMode: 'cover',
+    },
 
     headerTextWrap: {
       flex: 1,
@@ -639,7 +645,7 @@ export function getPaymentScreenStyles(palette) {
     minHeight: 44,
   },
   primaryButtonText: {
-    color: palette.background,
+    color: palette.iconOnPrimary,
     fontSize: 13,
     fontWeight: '700',
   },
@@ -700,9 +706,9 @@ export function getPaymentScreenStyles(palette) {
   },
   serviceCardLabel: {
     color: palette.text,
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '700',
-    lineHeight: 21,
+    lineHeight: 20,
   },
   ...createBottomTabStyles(palette),
   });
@@ -766,7 +772,7 @@ export function getCardScreenStyles(palette) {
     paddingVertical: 8,
   },
   comingSoonBadgeText: {
-    color: palette.primary,
+    color: palette.iconOnPrimary,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -994,6 +1000,12 @@ export function getProfileScreenStyles(palette) {
       color: palette.primary,
       fontSize: 28,
       fontWeight: '800',
+    },
+    profileAvatarImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 999,
+      resizeMode: 'cover',
     },
     profileName: {
       color: palette.text,

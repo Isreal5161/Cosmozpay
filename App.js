@@ -12,6 +12,7 @@ import WelcomeScreen from './src/screens/WelcomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import DepositScreen from './src/screens/DepositScreen';
 import { getPalette } from './src/styles/GlobalStyles';
+import UserContext from './src/context/UserContext';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -85,13 +86,18 @@ export default function App() {
   }, [themeMode, palette.bottomBar]);
 
   if (showSplash) {
-    return <SplashScreen themeMode={themeMode} />;
+    return (
+      <UserContext.Provider value={{ user, setUser }}>
+        <SplashScreen themeMode={themeMode} />
+      </UserContext.Provider>
+    );
   }
 
   if (showSignup) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
-        <SignupScreen
+      <UserContext.Provider value={{ user, setUser }}>
+        <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+          <SignupScreen
           themeMode={themeMode}
           onSignup={async (payload) => {
             try {
@@ -106,14 +112,16 @@ export default function App() {
           }}
           onSignIn={() => { setShowSignup(false); setShowLogin(true); }}
         />
-      </SafeAreaView>
+        </SafeAreaView>
+      </UserContext.Provider>
     );
   }
 
   if (showLogin) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
-        <LoginScreen
+      <UserContext.Provider value={{ user, setUser }}>
+        <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+          <LoginScreen
           themeMode={themeMode}
           onLogin={async (payload) => {
             const nameFromId = payload.identifier ? (payload.identifier.split('@')[0] || payload.identifier) : 'User';
@@ -130,15 +138,18 @@ export default function App() {
           }}
           onBack={() => { setShowLogin(false); setShowSignup(true); }}
         />
-      </SafeAreaView>
+        </SafeAreaView>
+      </UserContext.Provider>
     );
   }
 
   if (showWelcome) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
-        <WelcomeScreen user={user} themeMode={themeMode} onContinue={() => setShowWelcome(false)} onSignIn={() => { setShowWelcome(false); setShowLogin(true); }} />
-      </SafeAreaView>
+      <UserContext.Provider value={{ user, setUser }}>
+        <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+          <WelcomeScreen user={user} themeMode={themeMode} onContinue={() => setShowWelcome(false)} onSignIn={() => { setShowWelcome(false); setShowLogin(true); }} />
+        </SafeAreaView>
+      </UserContext.Provider>
     );
   }
 
@@ -157,6 +168,7 @@ export default function App() {
         activeTab={activeTab}
         onTabPress={setActiveTab}
         themeMode={themeMode}
+        user={user}
         onOpenDeposit={openDeposit}
         onOpenData={() => setFullScreen('data')}
         onOpenAirtime={() => setFullScreen('airtime')}
@@ -168,7 +180,7 @@ export default function App() {
         onOpenSendMoney={() => setFullScreen('sendmoney')}
       />
     ) : activeTab === 'activity' ? (
-      <ActivityScreen activeTab={activeTab} onTabPress={setActiveTab} themeMode={themeMode} />
+      <ActivityScreen activeTab={activeTab} onTabPress={setActiveTab} themeMode={themeMode} user={user} />
     ) : activeTab === 'cards' ? (
       <CardsScreen activeTab={activeTab} onTabPress={setActiveTab} themeMode={themeMode} />
     ) : activeTab === 'profile' ? (
@@ -473,7 +485,8 @@ export default function App() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+    <UserContext.Provider value={{ user, setUser }}>
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
       {/* force re-render of expo StatusBar when theme changes via key */}
       <StatusBar
         key={`${themeMode}-${activeTab}`}
@@ -495,7 +508,8 @@ export default function App() {
       </Animated.View>
       {/* hide global floating overlays when welcome/login/signup/splash are visible */}
       <DepositScreen visible={depositVisible} onClose={closeDeposit} themeMode={themeMode} />
-    </SafeAreaView>
+      </SafeAreaView>
+    </UserContext.Provider>
   );
 }
 

@@ -3,6 +3,7 @@ import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-na
 // import { StatusBar } from 'expo-status-bar';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getPalette, getPaymentScreenStyles } from '../styles/GlobalStyles';
+import { useUser } from '../context/UserContext';
 import getSafeTop from '../utils/getSafeTop';
 
 const paymentServices = [
@@ -49,9 +50,11 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
 }
 
 export default function PaymentsScreen({ activeTab = 'payments', onTabPress, themeMode = 'dark', onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenAirtimeToCash, onOpenEducation, onOpenNetflix, onOpenSendMoney }) {
+  const { user } = useUser();
   const palette = getPalette(themeMode);
   const styles = getPaymentScreenStyles(palette);
   const safeTop = getSafeTop();
+  const balanceValue = Number(user?.balance ?? 0);
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
@@ -76,12 +79,12 @@ export default function PaymentsScreen({ activeTab = 'payments', onTabPress, the
 
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>Available balance</Text>
-          <Text style={styles.balanceAmount}>NGN 245,900.00</Text>
+          <Text style={styles.balanceAmount}>NGN {balanceValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
           <Text style={styles.balanceNote}>Use your wallet to complete payments in seconds.</Text>
 
           <View style={styles.balanceButtonRow}>
             <TouchableOpacity activeOpacity={0.85} style={styles.primaryButton} onPress={() => onOpenDeposit?.()}>
-              <Feather color={palette.background} name="plus-circle" size={16} />
+              <Feather color={palette.iconOnPrimary} name="plus-circle" size={16} />
               <Text style={styles.primaryButtonText}>Add money</Text>
             </TouchableOpacity>
 

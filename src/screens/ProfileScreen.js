@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, ScrollView, Switch, Text, TouchableOpacity, View, Modal, Alert } from 'react-native';
+import { SafeAreaView, ScrollView, Switch, Text, TouchableOpacity, View, Modal, Alert, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { getPalette, getProfileScreenStyles } from '../styles/GlobalStyles';
@@ -80,6 +81,54 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
   const safeTop = getSafeTop();
   const isLightMode = themeMode === 'light';
 
+  const [localUser, setLocalUser] = useState(user);
+
+  useEffect(() => {
+    setLocalUser(user);
+  }, [user]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+        const raw = await AsyncStorage.getItem('user');
+        if (raw) setLocalUser(JSON.parse(raw));
+      } catch (e) {
+        // ignore
+      }
+    })();
+  }, []);
+
+  const pickImage = async () => {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (perm.status !== 'granted') {
+        Alert.alert('Permission required', 'Permission to access photos is required to choose an avatar.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      const uri = result?.assets?.[0]?.uri ?? result?.uri;
+      if (uri) {
+        const updated = { ...(localUser || user), avatar: { uri } };
+        setLocalUser(updated);
+        try {
+          const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+          await AsyncStorage.setItem('user', JSON.stringify(updated));
+        } catch (e) {
+          // ignore
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
+
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
@@ -104,7 +153,7 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
   const agentButtonBg = '#FFFFFF';
   const agentButtonTextColor = themeMode === 'dark' ? '#1F1F1F' : palette.primary;
   const tierBadgeBg = themeMode === 'dark' ? palette.surfaceRaised : palette.primaryMuted;
-  const tierBadgeTextColor = '#FFFFFF';
+  const tierBadgeTextColor = themeMode === 'dark' ? '#FFFFFF' : palette.text;
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
@@ -128,11 +177,15 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
         </View>
 
         <View style={styles.profileCard}>
-          <View style={styles.profileAvatar}>
-            <Text style={styles.profileAvatarText}>{(user?.name || 'U').charAt(0).toUpperCase()}</Text>
-          </View>
-          <Text style={styles.profileName}>{user?.name || 'User'}</Text>
-          <Text style={styles.profileHandle}>{user?.email || ''}</Text>
+          <TouchableOpacity activeOpacity={0.9} onPress={pickImage} style={styles.profileAvatar}>
+            {localUser?.avatar ? (
+              <Image source={localUser.avatar} style={styles.profileAvatarImage} />
+            ) : (
+              <Text style={styles.profileAvatarText}>{(localUser?.name || 'U').charAt(0).toUpperCase()}</Text>
+            )}
+          </TouchableOpacity>
+          <Text style={styles.profileName}>{localUser?.name || 'User'}</Text>
+          <Text style={styles.profileHandle}>{localUser?.email || ''}</Text>
           <View style={[styles.tierBadge, { backgroundColor: tierBadgeBg }] }>
             <Text style={[styles.tierBadgeText, { color: tierBadgeTextColor }]}>Tier 2 verified</Text>
           </View>

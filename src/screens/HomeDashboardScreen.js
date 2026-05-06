@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, Image } from 'react-native';
 // import { StatusBar } from 'expo-status-bar';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getHomeDashboardStyles, getPalette } from '../styles/GlobalStyles';
 import getSafeTop from '../utils/getSafeTop';
+import { useUser } from '../context/UserContext';
 
 const quickActions = [
   { label: 'Save money', icon: 'save' },
@@ -110,9 +111,11 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
   );
 }
 
-export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, themeMode = 'dark', user = { name: 'Diateck', avatar: null }, onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenRewards, onOpenSave, onOpenHelp }) {
+export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, themeMode = 'dark', onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenRewards, onOpenSave, onOpenHelp }) {
+  const { user } = useUser();
   const palette = getPalette(themeMode);
   const styles = getHomeDashboardStyles(palette);
+
   const initial = (user?.name || 'U').charAt(0).toUpperCase();
   const safeTop = getSafeTop();
 
