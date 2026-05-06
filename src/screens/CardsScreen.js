@@ -43,7 +43,7 @@ export default function CardsScreen({ activeTab = 'cards', onTabPress, themeMode
           <View style={styles.headerRow}>
             <View>
               <Text style={styles.headerEyebrow}>Cards</Text>
-              <Text style={styles.headerTitle}>Your CosmozCard</Text>
+              <Text style={styles.headerTitle}>Your Cosmo-card</Text>
             </View>
 
             <TouchableOpacity activeOpacity={0.85} style={styles.headerAction}>
@@ -57,7 +57,7 @@ export default function CardsScreen({ activeTab = 'cards', onTabPress, themeMode
             <Text style={styles.comingSoonBadgeText}>Coming soon</Text>
           </View>
 
-          <Text style={styles.comingSoonTitle}>CosmozCard is on the way</Text>
+          <Text style={styles.comingSoonTitle}>Cosmo-card is on the way</Text>
           <Text style={styles.comingSoonText}>
             Soon you will be able to purchase data, top up airtime, and pay for subscriptions with CosmozCard.
           </Text>
