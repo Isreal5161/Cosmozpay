@@ -43,7 +43,7 @@ export default function LoginScreen({ onLogin, onBack, themeMode = 'light' }) {
         <TouchableOpacity
           style={[styles.button, { backgroundColor: palette.primary }]}
           activeOpacity={0.9}
-          onPress={() => onLogin?.({ identifier })}
+          onPress={() => onLogin?.({ identifier, password })}
         >
           <Text style={[styles.buttonText, { color: palette.iconOnPrimary }]}>Sign in</Text>
         </TouchableOpacity>
