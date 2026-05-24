@@ -400,6 +400,21 @@ export function getHomeDashboardStyles(palette) {
        QUICK ACTIONS
     ========================= */
 
+    promotionalBannerScroll: {
+      marginBottom: 16,
+    },
+
+    promotionalBannerTrack: {
+      alignItems: 'center',
+    },
+
+    promotionalBannerImage: {
+      backgroundColor: palette.surface,
+      borderRadius: 10,
+      height: 88,
+      resizeMode: 'cover',
+    },
+
     quickActionsGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',

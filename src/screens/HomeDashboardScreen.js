@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, Image } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, Image, useWindowDimensions } from 'react-native';
 // import { StatusBar } from 'expo-status-bar';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getHomeDashboardStyles, getPalette } from '../styles/GlobalStyles';
@@ -11,6 +11,11 @@ const quickActions = [
   { label: 'Add money', icon: 'plus' },
   { label: 'Pay bills', icon: 'file-text' },
   { label: 'Help', icon: 'help-circle' },
+];
+
+const promotionalBanners = [
+  require('../../public/banner1.jpg'),
+  require('../../public/banner2.jpg'),
 ];
 
 const services = [
@@ -113,11 +118,32 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
 
 export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, themeMode = 'dark', onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenRewards, onOpenSave, onOpenHelp }) {
   const { user } = useUser();
+  const { width } = useWindowDimensions();
   const palette = getPalette(themeMode);
   const styles = getHomeDashboardStyles(palette);
+  const promotionalBannerWidth = width - 32;
+  const promotionalBannerRef = useRef(null);
+  const [, setActivePromotionalBanner] = useState(0);
 
   const initial = (user?.name || 'U').charAt(0).toUpperCase();
   const safeTop = getSafeTop();
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActivePromotionalBanner((currentIndex) => {
+        const nextIndex = (currentIndex + 1) % promotionalBanners.length;
+
+        promotionalBannerRef.current?.scrollTo({
+          x: nextIndex * promotionalBannerWidth,
+          animated: true,
+        });
+
+        return nextIndex;
+      });
+    }, 3500);
+
+    return () => clearInterval(timer);
+  }, [promotionalBannerWidth]);
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
@@ -180,6 +206,35 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
               </View>
           </View>
         </View>
+
+        <ScrollView
+          ref={promotionalBannerRef}
+          horizontal
+          pagingEnabled
+          decelerationRate="fast"
+          snapToInterval={promotionalBannerWidth}
+          snapToAlignment="start"
+          disableIntervalMomentum
+          showsHorizontalScrollIndicator={false}
+          style={styles.promotionalBannerScroll}
+          contentContainerStyle={styles.promotionalBannerTrack}
+          onMomentumScrollEnd={(event) => {
+            const nextIndex = Math.round(
+              event.nativeEvent.contentOffset.x / promotionalBannerWidth
+            );
+            setActivePromotionalBanner(
+              Math.max(0, Math.min(nextIndex, promotionalBanners.length - 1))
+            );
+          }}
+        >
+          {promotionalBanners.map((banner, index) => (
+            <Image
+              key={`promotional-banner-${index}`}
+              source={banner}
+              style={[styles.promotionalBannerImage, { width: promotionalBannerWidth }]}
+            />
+          ))}
+        </ScrollView>
 
         {/* QUICK ACTIONS */}
         <View style={styles.quickActionsGrid}>
