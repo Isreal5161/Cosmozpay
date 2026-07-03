@@ -26,7 +26,7 @@ export default function RewardsScreen({ user, onBack, themeMode = 'dark', onOpen
         <Text style={[styles.title, { color: palette.text }]}>Rewards</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={[styles.depositButton, { backgroundColor: palette.primary }]} onPress={() => onOpenDeposit?.()}>
-            <Text style={styles.depositText}>+ Deposit</Text>
+            <Text style={[styles.depositText, { color: palette.iconOnPrimary }]}>+ Deposit</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -54,7 +54,7 @@ export default function RewardsScreen({ user, onBack, themeMode = 'dark', onOpen
             disabled={!canConvert}
             onPress={() => onSuccess?.({ provider: 'rewards_convert', amount: parsed })}
           >
-            <Text style={styles.primaryButtonText}>Convert to balance</Text>
+            <Text style={[styles.primaryButtonText, { color: palette.iconOnPrimary }]}>Convert to balance</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

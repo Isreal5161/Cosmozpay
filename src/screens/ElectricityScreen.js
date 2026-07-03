@@ -88,7 +88,7 @@ export default function ElectricityScreen({ user, onBack, themeMode = 'dark', on
         <Text style={[styles.title, { color: palette.text }]}>Electricity Bill</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={[styles.depositButton, { backgroundColor: palette.primary }]} onPress={() => onOpenDeposit?.()}>
-            <Text style={styles.depositText}>+ Deposit</Text>
+            <Text style={[styles.depositText, { color: palette.iconOnPrimary }]}>+ Deposit</Text>
           </TouchableOpacity>
         </View>
       </View>

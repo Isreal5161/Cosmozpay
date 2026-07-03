@@ -53,7 +53,7 @@ export default function TvCableScreen({ user, onBack, themeMode = 'dark', onSele
         <Text style={[styles.title, { color: palette.text }]}>Cable TV Subscription</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={[styles.depositButton, { backgroundColor: palette.primary }]} onPress={() => onOpenDeposit?.()}>
-            <Text style={styles.depositText}>+ Deposit</Text>
+            <Text style={[styles.depositText, { color: palette.iconOnPrimary }]}>+ Deposit</Text>
           </TouchableOpacity>
         </View>
       </View>

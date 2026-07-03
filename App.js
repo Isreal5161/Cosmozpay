@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Animated, Easing, SafeAreaView, StyleSheet, StatusBar as RNStatusBar, Platform } from 'react-native';
+import { Animated, Easing, SafeAreaView, StyleSheet, StatusBar as RNStatusBar, Platform, BackHandler } from 'react-native';
 import ActivityScreen from './src/screens/ActivityScreen';
 import CardsScreen from './src/screens/CardsScreen';
 import HomeDashboardScreen from './src/screens/HomeDashboardScreen';
@@ -24,6 +24,7 @@ export default function App() {
   // Default to light mode
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [fullScreen, setFullScreen] = useState(null);
+  const [previewInvoice, setPreviewInvoice] = useState(null);
   const [successPayload, setSuccessPayload] = useState(null);
   const [user, setUser] = useState({ name: 'Diateck', avatar: null, email: 'you@example.com', phone: '', balance: 15982.62 });
   const translateY = useRef(new Animated.Value(90)).current;
@@ -84,6 +85,63 @@ export default function App() {
       RNStatusBar.setTranslucent(false);
     }
   }, [themeMode, palette.bottomBar]);
+
+  // Global Android hardware back button handler
+  useEffect(() => {
+    const onBackPress = () => {
+      // If a deposit modal is open, close it first
+      if (depositVisible) {
+        setDepositVisible(false);
+        return true;
+      }
+
+      // During initial auth flow, navigate back through signup/login/welcome
+      if (showLogin) {
+        setShowLogin(false);
+        setShowSignup(true);
+        return true;
+      }
+      if (showSignup) {
+        setShowSignup(false);
+        setShowWelcome(true);
+        return true;
+      }
+
+      // If a fullScreen overlay is active, try to navigate to its logical parent
+      if (fullScreen) {
+        if (typeof fullScreen === 'string') {
+          if (fullScreen.startsWith('tvcable_provider_')) {
+            setFullScreen('tvcable');
+            return true;
+          }
+          if (fullScreen.startsWith('electricity_provider_')) {
+            setFullScreen('electricity');
+            return true;
+          }
+          if (fullScreen.includes('_')) {
+            const parts = fullScreen.split('_');
+            const tail = parts.slice(1).join('_');
+            setFullScreen(tail);
+            return true;
+          }
+        }
+        setFullScreen(null);
+        return true;
+      }
+
+      // If user is not on home tab, go home
+      if (activeTab !== 'home') {
+        setActiveTab('home');
+        return true;
+      }
+
+      // Let the OS handle the back press (exit app)
+      return false;
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [depositVisible, showLogin, showSignup, fullScreen, activeTab]);
 
   if (showSplash) {
     return (
@@ -169,6 +227,7 @@ export default function App() {
         onTabPress={setActiveTab}
         themeMode={themeMode}
         user={user}
+        onOpenInvoice={() => setFullScreen('invoice')}
         onOpenDeposit={openDeposit}
         onOpenData={() => setFullScreen('data')}
         onOpenAirtime={() => setFullScreen('airtime')}
@@ -177,6 +236,7 @@ export default function App() {
         onOpenTvcable={() => setFullScreen('tvcable')}
         onOpenEducation={() => setFullScreen('education')}
         onOpenNetflix={() => setFullScreen('netflix')}
+        onOpenGiftCard={() => setFullScreen('giftcard')}
         onOpenSendMoney={() => setFullScreen('sendmoney')}
       />
     ) : activeTab === 'activity' ? (
@@ -215,14 +275,15 @@ export default function App() {
         themeMode={themeMode}
         user={user}
         onOpenDeposit={openDeposit}
-          onOpenData={() => setFullScreen('data')}
+        onOpenData={() => setFullScreen('data')}
         onOpenAirtime={() => setFullScreen('airtime')}
         onOpenAirtimeToCash={() => setFullScreen('airtime_to_cash')}
         onOpenElectricity={() => setFullScreen('electricity')}
         onOpenTvcable={() => setFullScreen('tvcable')}
-          onOpenRewards={() => setFullScreen('rewards')}
-          onOpenSave={() => setFullScreen('save')}
-          onOpenHelp={() => setFullScreen('help')}
+        onOpenRewards={() => setFullScreen('rewards')}
+        onOpenSave={() => setFullScreen('save')}
+        onOpenHelp={() => setFullScreen('help')}
+        onOpenInvoice={() => setFullScreen('invoice')}
       />
     );
 
@@ -319,10 +380,81 @@ export default function App() {
       const SuccessScreen = require('./src/screens/SuccessScreen').default;
       return (
         <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
-          <SuccessScreen payload={successPayload} themeMode={themeMode} onDone={() => { setSuccessPayload(null); setFullScreen(null); setActiveTab('home'); }} onSaveBeneficiary={(p) => { /* stub: save beneficiary */ }} onViewReceipt={(p) => { /* stub: open receipt */ }} />
+          <SuccessScreen
+            payload={successPayload}
+            themeMode={themeMode}
+            onDone={() => {
+              setSuccessPayload(null);
+              setFullScreen(null);
+              setActiveTab('home');
+            }}
+            onSaveBeneficiary={(p) => {
+              /* stub: save beneficiary */
+            }}
+            onViewReceipt={(p) => {
+              setSuccessPayload(p);
+              setFullScreen('giftcard_receipt');
+            }}
+          />
         </SafeAreaView>
       );
     }
+  if (fullScreen === 'giftcard_receipt') {
+    const GiftCardReceiptScreen = require('./src/screens/GiftCardReceiptScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <GiftCardReceiptScreen
+          payload={successPayload}
+          themeMode={themeMode}
+          onBack={() => setFullScreen('success')}
+        />
+      </SafeAreaView>
+    );
+  }
+  if (fullScreen === 'invoice') {
+    const InvoiceScreen = require('./src/screens/InvoiceScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}> 
+        <InvoiceScreen
+          themeMode={themeMode}
+          onBack={() => setFullScreen(null)}
+          onOpenPreview={(payload) => {
+            setPreviewInvoice(payload);
+            setFullScreen('invoice_preview');
+          }}
+        />
+      </SafeAreaView>
+    );
+  }
+  if (fullScreen === 'giftcard') {
+    const GiftCardScreen = require('./src/screens/GiftCardScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
+        <GiftCardScreen
+          user={user}
+          themeMode={themeMode}
+          onBack={() => setFullScreen(null)}
+          onSuccess={(payload) => {
+            setSuccessPayload(payload);
+            setFullScreen('success');
+          }}
+          onOpenDeposit={openDeposit}
+        />
+      </SafeAreaView>
+    );
+  }
+  if (fullScreen === 'invoice_preview') {
+    const InvoicePreviewScreen = require('./src/screens/InvoicePreviewScreen').default;
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
+        <InvoicePreviewScreen
+          themeMode={themeMode}
+          invoice={previewInvoice}
+          onBack={() => setFullScreen('invoice')}
+        />
+      </SafeAreaView>
+    );
+  }
   if (fullScreen === 'airtime') {
     const AirtimeScreen = require('./src/screens/AirtimeScreen').default;
     return (

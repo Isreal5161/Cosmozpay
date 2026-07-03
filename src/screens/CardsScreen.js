@@ -1,9 +1,9 @@
 import React from 'react';
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, ImageBackground } from 'react-native';
 
 import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { getCardScreenStyles, getPalette } from '../styles/GlobalStyles';
+import { useUser } from '../context/UserContext';
 import getSafeTop from '../utils/getSafeTop';
 
 const bottomTabs = [
@@ -31,6 +31,7 @@ export default function CardsScreen({ activeTab = 'cards', onTabPress, themeMode
   const palette = getPalette(themeMode);
   const styles = getCardScreenStyles(palette);
   const safeTop = getSafeTop();
+  const { user } = useUser();
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
@@ -52,25 +53,34 @@ export default function CardsScreen({ activeTab = 'cards', onTabPress, themeMode
           </View>
         </View>
 
-        <View style={styles.comingSoonCard}>
-          <View style={styles.comingSoonBadge}>
-            <Text style={styles.comingSoonBadgeText}>Coming soon</Text>
-          </View>
+        <View style={styles.virtualCardWrap}>
+          {(() => {
+            const isFemale = (user?.gender || '').toLowerCase() === 'female';
+            const cardImage = isFemale
+              ? require('../../public/CosmozCardFemale.png')
+              : require('../../public/CosmozCardMale.jpeg');
 
-          <Text style={styles.comingSoonTitle}>Cosmo-card is on the way</Text>
-          <Text style={styles.comingSoonText}>
-            Soon you will be able to purchase data, top up airtime, and pay for subscriptions with CosmozCard.
-          </Text>
+            return (
+              <ImageBackground
+                source={cardImage}
+                style={styles.virtualCardImage}
+                imageStyle={{ borderRadius: 16, resizeMode: 'contain' }}
+              />
+            );
+          })()}
+        </View>
 
-          <View style={styles.comingSoonList}>
-            <Text style={styles.comingSoonListItem}>Data bundle payments</Text>
-            <Text style={styles.comingSoonListItem}>Airtime top-up</Text>
-            <Text style={styles.comingSoonListItem}>Netflix and streaming subscriptions</Text>
-            <Text style={styles.comingSoonListItem}>Cable TV and utility payments</Text>
-          </View>
+                  <View style={styles.cardInfoWrap}>
+                    <Text style={styles.cardTitle}>Cosmo-Card</Text>
+                    <Text style={styles.cardDescription}>
+                      Experience seamless and secure payments anywhere with the Cosmo-Card. Choose from a variety of colors and enjoy easy, contactless transactions for making and receiving payments on the go.
+                    </Text>
 
-          <TouchableOpacity activeOpacity={0.85} style={styles.notifyButton}>
-            <Text style={styles.notifyButtonText}>Notify me</Text>
+          <Text style={styles.orderingFeeLabel}>Ordering Fee</Text>
+          <Text style={styles.feeAmount}>₦ 1,000</Text>
+
+          <TouchableOpacity activeOpacity={0.85} style={styles.orderButton} onPress={() => {}}>
+            <Text style={styles.orderButtonText}>Order</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

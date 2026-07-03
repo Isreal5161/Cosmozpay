@@ -174,7 +174,7 @@ export default function MtnAwufDataScreen({ user, onBack, themeMode = 'dark', on
         <Text style={[styles.title, { color: palette.text }]}>MTN Awuf Bundles</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={[styles.depositButton, { backgroundColor: palette.primary }]} onPress={() => onOpenDeposit?.()}>
-            <Text style={styles.depositText}>+ Deposit</Text>
+            <Text style={[styles.depositText, { color: palette.iconOnPrimary }]}>+ Deposit</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -312,11 +312,11 @@ export default function MtnAwufDataScreen({ user, onBack, themeMode = 'dark', on
             <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Total Payable</Text><Text style={[styles.authValue, { color: '#E94B4B' }]}>{'₦' + getPayableAmount().toFixed(2)}</Text></View>
 
             <Text style={[styles.pinPrompt, { color: palette.text }]}>Enter Account Pin To Authorize</Text>
-            <View style={styles.pinCircles}>
+            <TouchableOpacity activeOpacity={0.9} onPress={() => pinInputRef.current?.focus?.()} style={styles.pinCircles}>
               {[0,1,2,3].map((i) => (
                 <View key={i} style={[styles.pinCircle, pin.length > i && styles.pinFilled]} />
               ))}
-            </View>
+            </TouchableOpacity>
             {biometricEnabled ? (
               <TouchableOpacity onPress={tryBiometricAuth} style={{ alignSelf: 'center', marginBottom: 12 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Platform, StatusBar as RNStatusBar, ScrollView, KeyboardAvoidingView, Modal, FlatList } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Platform, StatusBar as RNStatusBar, Modal, FlatList, Animated, Image } from 'react-native';
 import getSafeTop from '../utils/getSafeTop';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialIcons } from '@expo/vector-icons';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { getPalette } from '../styles/GlobalStyles';
+import KeyboardWrapper from '../components/KeyboardWrapper';
 
 const BANKS = [
   { key: 'access', label: 'Access Bank' },
@@ -34,6 +36,55 @@ export default function SendMoneyScreen({ user, onBack, themeMode = 'dark', onOp
   const [customBankName, setCustomBankName] = useState('');
   const [amount, setAmount] = useState(prefillAmount ? String(prefillAmount) : '');
   const [note, setNote] = useState(prefillNote || '');
+  const [processing, setProcessing] = useState(false);
+  const [authVisible, setAuthVisible] = useState(false);
+  const [pin, setPin] = useState('');
+  const pinInputRef = useRef(null);
+  const loadingAnim = useRef(new Animated.Value(1)).current;
+  const loadingLoopRef = useRef(null);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+        const v = await AsyncStorage.getItem('biometricEnabled');
+        setBiometricEnabled(v === '1');
+      } catch (e) {
+        setBiometricEnabled(false);
+      }
+    })();
+  }, []);
+
+  function startPurchase() {
+    setProcessing(true);
+    loadingAnim.setValue(1);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(loadingAnim, { toValue: 1.18, duration: 360, useNativeDriver: true }),
+        Animated.timing(loadingAnim, { toValue: 0.88, duration: 360, useNativeDriver: true }),
+      ])
+    );
+    loadingLoopRef.current = loop;
+    loop.start();
+    setTimeout(() => {
+      loadingLoopRef.current?.stop();
+      Animated.timing(loadingAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      setProcessing(false);
+      setAuthVisible(true);
+    }, 900);
+  }
+
+  function handlePay() {
+    setAuthVisible(false);
+    const numericAmount = Math.max(0, Number((amount || '').replace(/[^0-9.]/g, '')) || 0);
+    const payload = { provider: 'sendmoney', to: toAccount, bank: toBank === 'other' ? customBankName : toBank, accountNumber: accountNumber || null, amount: numericAmount, note };
+    if (typeof onSuccess === 'function') onSuccess(payload);
+  }
+
+  useEffect(() => {
+    if (authVisible) setTimeout(() => pinInputRef.current?.focus?.(), 220);
+  }, [authVisible]);
 
   useEffect(() => {
     if (prefillToAccount) setToAccount(prefillToAccount);
@@ -61,8 +112,7 @@ export default function SendMoneyScreen({ user, onBack, themeMode = 'dark', onOp
         </View>
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }} keyboardVerticalOffset={safeTop + 60}>
-        <ScrollView contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
+  <KeyboardWrapper contentContainerStyle={{ paddingBottom: 120 }}>
           <View style={[styles.balanceCard, { backgroundColor: palette.surface }]}> 
             <Text style={[styles.balanceLabel, { color: palette.textMuted }]}>Available Balance</Text>
             <Text style={[styles.balanceAmount, { color: palette.text }]}>NGN {Number(user?.balance || 0).toLocaleString()}</Text>
@@ -156,13 +206,62 @@ export default function SendMoneyScreen({ user, onBack, themeMode = 'dark', onOp
             <TouchableOpacity
               style={[styles.proceedButton, { backgroundColor: numericAmount > 0 ? palette.primary : '#777' }]}
               disabled={numericAmount <= 0 || !toAccount}
-              onPress={() => onSuccess?.({ provider: 'sendmoney', to: toAccount, bank: toBank === 'other' ? customBankName : toBank, accountNumber: accountNumber || null, amount: numericAmount, note })}
+              onPress={startPurchase}
             >
               <Text style={styles.proceedText}>Send</Text>
             </TouchableOpacity>
+
+            {processing && (
+              <View style={styles.processingOverlay} pointerEvents="none">
+                <Animated.View style={[styles.processingCircle, { transform: [{ scale: loadingAnim }], backgroundColor: palette.surface }]}> 
+                  <Image source={require('../../public/Cosmozpaylogo.jpeg')} style={styles.processingLogo} />
+                </Animated.View>
+              </View>
+            )}
+
+            <Modal visible={authVisible} animationType="slide" transparent>
+              <View style={styles.authOverlay}>
+                <View style={[styles.authSheet, { backgroundColor: palette.surface }]}> 
+                  <View style={styles.authHeader}>
+                    <Text style={[styles.authTitle, { color: palette.text }]}>Authorization Screen</Text>
+                    <TouchableOpacity onPress={() => setAuthVisible(false)}>
+                      <Feather name="x" size={20} color={palette.text} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Recipient</Text><Text style={[styles.authValue, { color: '#2DA2F9' }]}>{toAccount}</Text></View>
+                  <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Bank</Text><Text style={[styles.authValue, { color: palette.text }]}>{toBank === 'other' ? customBankName : toBank}</Text></View>
+                  <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Amount</Text><Text style={[styles.authValue, { color: palette.text }]}>{numericAmount.toLocaleString()}</Text></View>
+
+                  <Text style={[styles.pinPrompt, { color: palette.text }]}>Enter Account Pin To Authorize</Text>
+                  <TouchableOpacity activeOpacity={0.9} onPress={() => pinInputRef.current?.focus?.()} style={styles.pinCircles}>
+                    {[0,1,2,3].map((i) => (
+                      <View key={i} style={[styles.pinCircle, { borderColor: palette.textMuted, backgroundColor: pin.length > i ? palette.primary : 'transparent' }]} />
+                    ))}
+                  </TouchableOpacity>
+                  {biometricEnabled ? (
+                    <TouchableOpacity onPress={async () => {
+                      try {
+                        const res = await LocalAuthentication.authenticateAsync({ promptMessage: 'Authenticate to pay' });
+                        if (res.success) handlePay();
+                      } catch (e) {}
+                    }} style={{ alignSelf: 'center', marginBottom: 12 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <MaterialIcons name="fingerprint" size={28} color={palette.primary} />
+                        <Text style={{ color: palette.primary, fontWeight: '700' }}>Use fingerprint</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ) : null}
+                  <TextInput ref={pinInputRef} value={pin} onChangeText={(t) => setPin(t.replace(/\D/g, '').slice(0,4))} keyboardType="numeric" maxLength={4} style={{ position: 'absolute', left: -1000, width: 1, height: 1, opacity: 0 }} />
+
+                  <TouchableOpacity style={[styles.payButton, { backgroundColor: pin.length === 4 ? palette.primary : '#777' }]} disabled={pin.length !== 4} onPress={handlePay}>
+                    <Text style={[styles.payText]}>Pay</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+  </KeyboardWrapper>
     </SafeAreaView>
   );
 }
@@ -189,4 +288,19 @@ const styles = StyleSheet.create({
   summaryAmount: { fontWeight: '800', fontSize: 18 },
   proceedButton: { marginTop: 18, alignSelf: 'center', paddingHorizontal: 40, paddingVertical: 12, borderRadius: 12 },
   proceedText: { color: '#fff', fontWeight: '800' },
+  authOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  authSheet: { padding: 16, borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '80%' },
+  authHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  authTitle: { fontSize: 16, fontWeight: '800' },
+  authRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' },
+  authLabel: { fontSize: 12 },
+  authValue: { fontWeight: '700' },
+  pinPrompt: { textAlign: 'center', marginTop: 12, marginBottom: 12 },
+  pinCircles: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 12 },
+  pinCircle: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: 'rgba(255,255,255,0.14)', marginHorizontal: 6 },
+  payButton: { padding: 12, borderRadius: 10, alignItems: 'center' },
+  payText: { color: '#fff', fontWeight: '700' },
+  processingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  processingCircle: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
+  processingLogo: { width: 40, height: 40, resizeMode: 'contain' },
 });

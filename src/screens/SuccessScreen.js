@@ -14,8 +14,35 @@ export default function SuccessScreen({ payload = {}, onDone, onSaveBeneficiary,
       Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
     ]).start();
   }, [scale, opacity]);
-  // Derive recipient and product labels consistently across payload shapes
-  const recipient = payload.smartcard || payload.decoder || payload.iuc || payload.phone || payload.to || payload.accountNumber || payload.email || payload.recipient || payload.uid || payload.userId || '-';
+  const providerLabels = {
+    giftcard: 'Gift Card',
+    mtn: 'MTN',
+    airtel: 'Airtel',
+    glo: 'Glo',
+    '9mobile': '9mobile',
+    ninemobile: '9mobile',
+    dstv: 'DStv',
+    gotv: 'GoTV',
+    startimes: 'StarTimes',
+    netflix: 'Netflix',
+    sendmoney: 'Send Money',
+    education: 'Education',
+    electricity: 'Electricity',
+    ibedc: 'IBEDC',
+    ikedc: 'IKEDC',
+    eedc_ekop: 'EEDC (EKO-PHCN)',
+    kedco: 'KEDCO',
+    phed: 'PHED',
+    jed: 'JED',
+    aedc: 'AEDC',
+    eedc_enugu: 'EEDC (ENUGU)',
+    bedc: 'BEDC',
+    kaedco: 'KAEDCO',
+    ikeja: 'IKEJA ELECTRIC',
+    ebe: 'EBE',
+  };
+  const providerName = providerLabels[payload.provider] || payload.provider?.toUpperCase() || 'Service';
+  const recipient = payload.smartcard || payload.decoder || payload.iuc || payload.phone || payload.to || payload.account || payload.accountNumber || payload.meter || payload.deliverTo || payload.email || payload.recipient || payload.uid || payload.userId || '-';
 
   function formatCurrency(v) {
     if (v === undefined || v === null) return '-';
@@ -25,15 +52,17 @@ export default function SuccessScreen({ payload = {}, onDone, onSaveBeneficiary,
 
   let productLabel = '-';
   const TV_PROVIDERS = ['dstv', 'gotv', 'startimes'];
+  const ELECTRICITY_PROVIDERS = ['ibedc', 'ikedc', 'eedc_ekop', 'kedco', 'phed', 'jed', 'aedc', 'eedc_enugu', 'bedc', 'kaedco', 'ikeja', 'ebe'];
   if (payload.selectedPackage && (payload.selectedPackage.title || payload.selectedPackage.id)) {
     productLabel = payload.selectedPackage.title || payload.selectedPackage.id;
   } else if (payload.product) {
     productLabel = payload.product;
   } else if (TV_PROVIDERS.includes(payload.provider)) {
     // tv subscription: try plan/name or show provider subscription
-    productLabel = payload.plan || payload.packageName || `${payload.provider?.toUpperCase()} subscription`;
+    productLabel = payload.plan || payload.packageName || `${providerName} subscription`;
+  } else if (payload.provider === 'giftcard') {
+    productLabel = payload.product || `${payload.recipient || 'Gift card'} sale`;
   } else if (payload.provider === 'airtel' || payload.provider === 'mtn' || payload.provider === 'glo' || payload.provider === '9mobile') {
-    // airtime/data providers: show amount + type if available
     const amt = payload.amount || payload.payable || payload.price;
     productLabel = amt ? `${formatCurrency(amt)} airtime/data` : 'Airtime/Data purchase';
   } else if (payload.provider === 'sendmoney') {
@@ -42,15 +71,19 @@ export default function SuccessScreen({ payload = {}, onDone, onSaveBeneficiary,
   } else if (payload.provider === 'rewards_convert') {
     productLabel = 'Commission conversion';
   } else if (payload.provider === 'netflix') {
-    productLabel = payload.plan ? `${payload.plan} plan` : 'Netflix subscription';
+    productLabel = payload.plan ? `${String(payload.plan).toUpperCase()} PLAN` : 'Netflix subscription';
   } else if (payload.provider === 'education') {
-    productLabel = payload.examType || payload.product || 'Exam PIN purchase';
+    const examName = payload.examType ? payload.examType.toUpperCase() : 'Exam';
+    const quantityText = payload.quantity ? ` x${payload.quantity}` : '';
+    productLabel = payload.product || `${examName} PIN${quantityText}`;
+  } else if (ELECTRICITY_PROVIDERS.includes(payload.provider) || payload.meter) {
+    productLabel = payload.provider ? `${providerName} meter token` : 'Electricity purchase';
   } else if (payload.amount) {
     productLabel = formatCurrency(payload.amount);
   }
 
-  // determine amount reliably
-  const amountValue = payload.amount || payload.total || payload.selectedPackage?.price || payload.price || payload.payable || null;
+  // determine amount reliably (treat 0 as a valid amount)
+  const amountValue = payload.amount ?? payload.total ?? payload.selectedPackage?.price ?? payload.price ?? payload.payable ?? null;
 
   const timeLabel = payload.timestamp ? new Date(payload.timestamp).toLocaleString() : (payload.date || '-');
 
@@ -67,14 +100,28 @@ export default function SuccessScreen({ payload = {}, onDone, onSaveBeneficiary,
         <Text style={[styles.subtitle, { color: palette.textMuted }]}>{payload.subtitle || (payload.provider === 'rewards_convert' ? 'Your commission was converted to your wallet balance.' : 'Your purchase was completed successfully.')}</Text>
 
         <View style={styles.infoCard}>
-          <Text style={[styles.infoLabel, { color: palette.textMuted }]}>Amount</Text>
-          <Text style={[styles.infoValue, { color: palette.text }]}>{amountValue ? formatCurrency(amountValue) : '-'}</Text>
+          <Text style={[styles.infoLabel, { color: palette.textMuted }]}>{payload.provider === 'giftcard' ? 'Amount received' : 'Amount'}</Text>
+          <Text style={[styles.infoValue, { color: palette.text }]}>{amountValue !== null && amountValue !== undefined ? formatCurrency(amountValue) : '-'}</Text>
 
-          <Text style={[styles.infoLabel, { color: palette.textMuted, marginTop: 10 }]}>{TV_PROVIDERS.includes(payload.provider) ? 'Smartcard/Decoder' : 'Recipient'}</Text>
+          <Text style={[styles.infoLabel, { color: palette.textMuted, marginTop: 10 }]}>{TV_PROVIDERS.includes(payload.provider) ? 'Smartcard/Decoder' : payload.provider === 'education' ? 'Delivery' : payload.provider === 'netflix' ? 'Account' : 'Recipient'}</Text>
           <Text style={[styles.infoValue, { color: palette.text }]}>{recipient}</Text>
+
+          {payload.provider === 'education' && payload.quantity ? (
+            <>
+              <Text style={[styles.infoLabel, { color: palette.textMuted, marginTop: 10 }]}>Quantity</Text>
+              <Text style={[styles.infoValue, { color: palette.text }]}>{payload.quantity}</Text>
+            </>
+          ) : null}
 
           <Text style={[styles.infoLabel, { color: palette.textMuted, marginTop: 10 }]}>{TV_PROVIDERS.includes(payload.provider) ? 'Package' : 'Product'}</Text>
           <Text style={[styles.infoValue, { color: palette.text }]}>{productLabel}</Text>
+
+          {payload.provider === 'netflix' && payload.months ? (
+            <>
+              <Text style={[styles.infoLabel, { color: palette.textMuted, marginTop: 10 }]}>Months</Text>
+              <Text style={[styles.infoValue, { color: palette.text }]}>{payload.months}</Text>
+            </>
+          ) : null}
 
           <Text style={[styles.infoLabel, { color: palette.textMuted, marginTop: 10 }]}>Date</Text>
           <Text style={[styles.infoValue, { color: palette.text }]}>{timeLabel}</Text>

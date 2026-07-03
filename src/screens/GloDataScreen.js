@@ -26,6 +26,7 @@ export default function GloDataScreen({ user, onBack, themeMode = 'dark', onOpen
   const [authVisible, setAuthVisible] = useState(false);
   const [pin, setPin] = useState('');
   const pinInputRef = useRef(null);
+  const safeFocus = (r) => { try { r?.current?.focus?.(); } catch (e) {} };
   const loadingAnim = useRef(new Animated.Value(1)).current;
   const loadingLoopRef = useRef(null);
   const [voucher, setVoucher] = useState('');
@@ -166,7 +167,7 @@ export default function GloDataScreen({ user, onBack, themeMode = 'dark', onOpen
 
   React.useEffect(() => {
     if (authVisible) {
-      setTimeout(() => pinInputRef.current?.focus?.(), 220);
+      setTimeout(() => safeFocus(pinInputRef), 220);
     }
   }, [authVisible]);
 
@@ -179,7 +180,7 @@ export default function GloDataScreen({ user, onBack, themeMode = 'dark', onOpen
         <Text style={[styles.title, { color: palette.text }]}>Buy Data Bundle</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={[styles.depositButton, { backgroundColor: palette.primary }]} onPress={() => onOpenDeposit?.()}>
-            <Text style={styles.depositText}>+ Deposit</Text>
+            <Text style={[styles.depositText, { color: palette.iconOnPrimary }]}>+ Deposit</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -318,11 +319,11 @@ export default function GloDataScreen({ user, onBack, themeMode = 'dark', onOpen
             <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Total Payable</Text><Text style={[styles.authValue, { color: '#E94B4B' }]}>{'₦' + getPayableAmount().toFixed(2)}</Text></View>
 
             <Text style={[styles.pinPrompt, { color: palette.text }]}>Enter Account Pin To Authorize</Text>
-            <View style={styles.pinCircles}>
+            <TouchableOpacity activeOpacity={0.9} onPress={() => safeFocus(pinInputRef)} style={styles.pinCircles}>
               {[0,1,2,3].map((i) => (
                 <View key={i} style={[styles.pinCircle, pin.length > i && styles.pinFilled]} />
               ))}
-            </View>
+            </TouchableOpacity>
             {biometricEnabled ? (
               <TouchableOpacity onPress={tryBiometricAuth} style={{ alignSelf: 'center', marginBottom: 12 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

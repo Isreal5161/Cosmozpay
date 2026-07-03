@@ -8,7 +8,7 @@ import { useUser } from '../context/UserContext';
 
 const quickActions = [
   { label: 'Save money', icon: 'save' },
-  { label: 'Add money', icon: 'plus' },
+  { label: 'Invoice', icon: 'file-text' },
   { label: 'Pay bills', icon: 'file-text' },
   { label: 'Help', icon: 'help-circle' },
 ];
@@ -116,7 +116,7 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
   );
 }
 
-export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, themeMode = 'dark', onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenRewards, onOpenSave, onOpenHelp }) {
+export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, themeMode = 'dark', onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenRewards, onOpenSave, onOpenHelp, onOpenInvoice }) {
   const { user } = useUser();
   const { width } = useWindowDimensions();
   const palette = getPalette(themeMode);
@@ -247,6 +247,10 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
               onPress={() => {
                   if (action.label === 'Save money') {
                     onOpenSave?.();
+                    return;
+                  }
+                  if (action.label === 'Invoice') {
+                    onOpenInvoice?.();
                     return;
                   }
                   if (action.label === 'Add money' || action.label === 'Deposit') {

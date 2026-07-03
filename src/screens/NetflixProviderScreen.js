@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Platform, StatusBar as RNStatusBar, ScrollView, KeyboardAvoidingView } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Platform, StatusBar as RNStatusBar, Modal, Animated, Image } from 'react-native';
 import getSafeTop from '../utils/getSafeTop';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialIcons } from '@expo/vector-icons';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { getPalette } from '../styles/GlobalStyles';
+import KeyboardWrapper from '../components/KeyboardWrapper';
 
 const PLANS = [
   { key: 'basic', label: 'Basic (Mobile SD)', price: 1900, screens: 1 },
@@ -22,6 +24,56 @@ export default function NetflixProviderScreen({ user, onBack, themeMode = 'dark'
   const m = Math.max(1, parseInt(months || '1', 10) || 1);
   const total = plan.price * m;
 
+  const [processing, setProcessing] = useState(false);
+  const [authVisible, setAuthVisible] = useState(false);
+  const [pin, setPin] = useState('');
+  const pinInputRef = useRef(null);
+  const safeFocus = (r) => { try { r?.current?.focus?.(); } catch (e) {} };
+  const loadingAnim = useRef(new Animated.Value(1)).current;
+  const loadingLoopRef = useRef(null);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+        const v = await AsyncStorage.getItem('biometricEnabled');
+        setBiometricEnabled(v === '1');
+      } catch (e) {
+        setBiometricEnabled(false);
+      }
+    })();
+  }, []);
+
+  function startPurchase() {
+    setProcessing(true);
+    loadingAnim.setValue(1);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(loadingAnim, { toValue: 1.18, duration: 360, useNativeDriver: true }),
+        Animated.timing(loadingAnim, { toValue: 0.88, duration: 360, useNativeDriver: true }),
+      ])
+    );
+    loadingLoopRef.current = loop;
+    loop.start();
+    setTimeout(() => {
+      loadingLoopRef.current?.stop();
+      Animated.timing(loadingAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      setProcessing(false);
+      setAuthVisible(true);
+    }, 900);
+  }
+
+  function handlePay() {
+    setAuthVisible(false);
+    const payload = { provider: 'netflix', plan: plan.key, months: m, account, total, timestamp: Date.now() };
+    if (typeof onSuccess === 'function') onSuccess(payload);
+  }
+
+  useEffect(() => {
+    if (authVisible) setTimeout(() => safeFocus(pinInputRef), 220);
+  }, [authVisible]);
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
       <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: safeTop + 6 }]}> 
@@ -31,19 +83,18 @@ export default function NetflixProviderScreen({ user, onBack, themeMode = 'dark'
         <Text style={[styles.title, { color: palette.text }]}>Netflix Subscription</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={[styles.depositButton, { backgroundColor: palette.primary }]} onPress={() => onOpenDeposit?.()}>
-            <Text style={styles.depositText}>+ Deposit</Text>
+            <Text style={[styles.depositText, { color: palette.iconOnPrimary }]}>+ Deposit</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }} keyboardVerticalOffset={safeTop + 60}>
-        <ScrollView contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled">
-          <View style={[styles.balanceCard, { backgroundColor: palette.surface }]}> 
-            <Text style={[styles.balanceLabel, { color: palette.textMuted }]}>Total Balance</Text>
-            <Text style={[styles.balanceAmount, { color: palette.text }]}>NGN {Number(user?.balance || 0).toLocaleString()}</Text>
-          </View>
+      <KeyboardWrapper contentContainerStyle={{ paddingBottom: 120 }}>
+              <View style={[styles.balanceCard, { backgroundColor: palette.surface }]}> 
+                <Text style={[styles.balanceLabel, { color: palette.textMuted }]}>Total Balance</Text>
+                <Text style={[styles.balanceAmount, { color: palette.text }]}>NGN {Number(user?.balance || 0).toLocaleString()}</Text>
+              </View>
 
-          <View style={styles.content}>
+              <View style={styles.content}>
             <Text style={[styles.sectionTitle, { color: palette.text }]}>Choose Plan</Text>
             <View style={styles.optionsRow}>
               {PLANS.map((p) => (
@@ -60,7 +111,7 @@ export default function NetflixProviderScreen({ user, onBack, themeMode = 'dark'
 
             <Text style={[styles.inputLabel, { color: palette.text }]}>Months</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: palette.surface }]}
+              style={[styles.input, { color: palette.text, backgroundColor: palette.surface }]}
               keyboardType="number-pad"
               value={months}
               onChangeText={(t) => setMonths(t.replace(/[^0-9]/g, ''))}
@@ -68,7 +119,7 @@ export default function NetflixProviderScreen({ user, onBack, themeMode = 'dark'
 
             <Text style={[styles.inputLabel, { color: palette.text }]}>Account (email/phone)</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: palette.surface }]}
+              style={[styles.input, { color: palette.text, backgroundColor: palette.surface }]}
               placeholder="e.g. you@example.com or 0803XXXXXXX"
               placeholderTextColor={palette.textMuted}
               value={account}
@@ -81,15 +132,71 @@ export default function NetflixProviderScreen({ user, onBack, themeMode = 'dark'
               <Text style={[styles.summaryAmount, { color: palette.text }]}>NGN {total.toLocaleString()}</Text>
             </View>
 
-            <TouchableOpacity style={[styles.proceedButton, { backgroundColor: palette.primary }]} onPress={() => onSuccess?.({ provider: 'netflix', plan: plan.key, months: m, account })}>
-              <Text style={styles.proceedText}>Subscribe</Text>
+            <TouchableOpacity style={[styles.proceedButton, { backgroundColor: palette.primary }]} onPress={startPurchase}>
+              <Text style={[styles.proceedText, { color: palette.iconOnPrimary }]}>Subscribe</Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+  </KeyboardWrapper>
+  {processing && (
+    <View style={styles.processingOverlay} pointerEvents="none">
+      <Animated.View style={[styles.processingCircle, { transform: [{ scale: loadingAnim }], backgroundColor: palette.surface }]}> 
+        <Image source={require('../../public/Cosmozpaylogo.jpeg')} style={styles.processingLogo} />
+      </Animated.View>
+    </View>
+  )}
+      {/* Authorization modal shown after processing */}
+      <Modal visible={authVisible} animationType="slide" transparent>
+        <View style={styles.authOverlay}>
+          <View style={[styles.authSheet, { backgroundColor: palette.surface }]}> 
+            <View style={styles.authHeader}>
+              <Text style={[styles.authTitle, { color: palette.text }]}>Authorization Screen</Text>
+              <TouchableOpacity onPress={() => setAuthVisible(false)}>
+                <Feather name="x" size={20} color={palette.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Product</Text><Text style={[styles.authValue, { color: palette.text }]}>{plan.label || 'Netflix Subscription'}</Text></View>
+            <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Recipient</Text><Text style={[styles.authValue, { color: '#2DA2F9' }]}>{account || '-'}</Text></View>
+            <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Amount</Text><Text style={[styles.authValue, { color: palette.text }]}>{'₦' + total.toLocaleString()}</Text></View>
+            <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Total Payable</Text><Text style={[styles.authValue, { color: '#E94B4B' }]}>{'₦' + total.toLocaleString()}</Text></View>
+
+            <Text style={[styles.pinPrompt, { color: palette.text }]}>Enter Account Pin To Authorize</Text>
+            <TouchableOpacity activeOpacity={0.9} onPress={() => safeFocus(pinInputRef)} style={styles.pinCircles}>
+              {[0,1,2,3].map((i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.pinCircle,
+                    { borderColor: palette.textMuted, backgroundColor: pin.length > i ? palette.primary : 'transparent' },
+                  ]}
+                />
+              ))}
+            </TouchableOpacity>
+            {biometricEnabled ? (
+              <TouchableOpacity onPress={async () => {
+                try {
+                  const res = await LocalAuthentication.authenticateAsync({ promptMessage: 'Authenticate to pay' });
+                  if (res.success) handlePay();
+                } catch (e) {}
+              }} style={{ alignSelf: 'center', marginBottom: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <MaterialIcons name="fingerprint" size={28} color={palette.primary} />
+                  <Text style={{ color: palette.primary, fontWeight: '700' }}>Use fingerprint</Text>
+                </View>
+              </TouchableOpacity>
+            ) : null}
+            <TextInput ref={pinInputRef} value={pin} onChangeText={(t) => setPin(t.replace(/\D/g, '').slice(0,4))} keyboardType="numeric" maxLength={4} style={{ position: 'absolute', left: -1000, width: 1, height: 1, opacity: 0 }} />
+
+            <TouchableOpacity style={[styles.payButton, { backgroundColor: pin.length === 4 ? palette.primary : '#777' }]} disabled={pin.length !== 4} onPress={handlePay}>
+              <Text style={[styles.payText]}>Pay</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -115,4 +222,19 @@ const styles = StyleSheet.create({
   summaryAmount: { fontWeight: '800', fontSize: 18 },
   proceedButton: { marginTop: 18, alignSelf: 'center', paddingHorizontal: 40, paddingVertical: 12, borderRadius: 12 },
   proceedText: { color: '#fff', fontWeight: '800' },
+  authOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  authSheet: { padding: 16, borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '80%' },
+  authHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  authTitle: { fontSize: 16, fontWeight: '800' },
+  authRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' },
+  authLabel: { fontSize: 12 },
+  authValue: { fontWeight: '700' },
+  pinPrompt: { textAlign: 'center', marginTop: 12, marginBottom: 12 },
+  pinCircles: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 12 },
+  pinCircle: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: 'rgba(255,255,255,0.14)', marginHorizontal: 6 },
+  payButton: { padding: 12, borderRadius: 10, alignItems: 'center' },
+  payText: { color: '#fff', fontWeight: '700' },
+  processingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  processingCircle: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
+  processingLogo: { width: 40, height: 40, resizeMode: 'contain' },
 });

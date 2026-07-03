@@ -10,11 +10,11 @@ const paymentServices = [
   { label: 'Data Bundle', icon: 'signal-cellular-2', tint: '#FF8D85' },
   { label: 'Airtime Topup', icon: 'phone-outline', tint: '#8A4DFF' },
   { label: 'Airtime to Cash', icon: 'cash', tint: '#4CAF50' },
+  { label: 'Gift Card', icon: 'gift', tint: '#FF7FAC' },
   { label: 'Education', icon: 'school-outline', tint: '#58B8FF' },
   { label: 'Netflix', icon: 'netflix', tint: '#F45B5B' },
   { label: 'Cable TV', icon: 'television-play', tint: '#6DDB88' },
   { label: 'Electricity', icon: 'flash-outline', tint: '#FFBF47' },
-  
 ];
 
 const bottomTabs = [
@@ -49,7 +49,7 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
   );
 }
 
-export default function PaymentsScreen({ activeTab = 'payments', onTabPress, themeMode = 'dark', onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenAirtimeToCash, onOpenEducation, onOpenNetflix, onOpenSendMoney }) {
+export default function PaymentsScreen({ activeTab = 'payments', onTabPress, themeMode = 'dark', onOpenInvoice, onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenAirtimeToCash, onOpenEducation, onOpenNetflix, onOpenGiftCard, onOpenSendMoney }) {
   const { user } = useUser();
   const palette = getPalette(themeMode);
   const styles = getPaymentScreenStyles(palette);
@@ -83,9 +83,9 @@ export default function PaymentsScreen({ activeTab = 'payments', onTabPress, the
           <Text style={styles.balanceNote}>Use your wallet to complete payments in seconds.</Text>
 
           <View style={styles.balanceButtonRow}>
-            <TouchableOpacity activeOpacity={0.85} style={styles.primaryButton} onPress={() => onOpenDeposit?.()}>
-              <Feather color={palette.iconOnPrimary} name="plus-circle" size={16} />
-              <Text style={styles.primaryButtonText}>Add money</Text>
+            <TouchableOpacity activeOpacity={0.85} style={styles.primaryButton} onPress={() => onOpenInvoice?.()}>
+              <Feather color={palette.iconOnPrimary} name="file-text" size={16} />
+              <Text style={styles.primaryButtonText}>Invoice</Text>
             </TouchableOpacity>
 
             <TouchableOpacity activeOpacity={0.85} style={styles.secondaryButton} onPress={() => onOpenSendMoney?.()}>
@@ -105,6 +105,7 @@ export default function PaymentsScreen({ activeTab = 'payments', onTabPress, the
             if (item.label === 'Data Bundle') handler = () => onOpenData?.();
             if (item.label === 'Airtime Topup') handler = () => onOpenAirtime?.();
             if (item.label === 'Airtime to Cash') handler = () => onOpenAirtimeToCash?.();
+            if (item.label === 'Gift Card') handler = () => onOpenGiftCard?.();
             if (item.label === 'Education') handler = () => onOpenEducation?.();
             if (item.label === 'Electricity') handler = () => onOpenElectricity?.();
             if (item.label === 'Netflix') handler = () => onOpenNetflix?.();
