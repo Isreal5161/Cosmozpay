@@ -8,12 +8,12 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "icon": "./public/Cosmozpaylogo.jpeg",
+    "icon": "./public/Cosmozpay-main-logo.png",
     "android": {
       "package": "com.cosmozpay.app",
       "versionCode": 1,
       "adaptiveIcon": {
-        "foregroundImage": "./public/Cosmozpaylogo.jpeg",
+        "foregroundImage": "./public/Cosmozpay-main-logo.png",
         "backgroundColor": "#111111"
       }
     },
@@ -24,7 +24,8 @@
     },
     "owner": "diateck",
     "plugins": [
-      "expo-sharing"
+      "expo-sharing",
+      "expo-font"
     ]
   }
 }
