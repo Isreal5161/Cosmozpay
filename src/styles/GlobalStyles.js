@@ -1,8 +1,8 @@
 import { StyleSheet } from 'react-native';
 
 export const darkPalette = {
-  primary: '#3A3A3A',
-  primaryDark: '#1F1F1F',
+  primary: '#5B21B6',
+  primaryDark: '#4C1D95',
   primaryMuted: '#2E2E2E',
   accent: '#8B5CF6',
   background: '#09090B',
@@ -24,8 +24,8 @@ export const darkPalette = {
 };
 
 export const lightPalette = {
-  primary: '#3A3A3A',
-  primaryDark: '#2A2A2A',
+  primary: '#5B21B6',
+  primaryDark: '#4C1D95',
   primaryMuted: '#E5E5E5',
   background: '#F6F2FF',
   surface: '#FFFFFF',
@@ -205,6 +205,12 @@ export function getHomeDashboardStyles(palette) {
       fontSize: 18,
       fontWeight: '700',
     },
+    profileAvatarImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 999,
+      resizeMode: 'cover',
+    },
 
     headerTextWrap: {
       flex: 1,
@@ -359,7 +365,7 @@ export function getHomeDashboardStyles(palette) {
     balanceActionButtonPrimary: {
       flex: 1,
       alignItems: 'center',
-      backgroundColor: palette.text,
+      backgroundColor: palette.primary,
       borderRadius: 10,
       justifyContent: 'center',
       minHeight: 44,
@@ -367,7 +373,7 @@ export function getHomeDashboardStyles(palette) {
     },
 
     balanceActionButtonPrimaryText: {
-      color: palette.background,
+      color: palette.iconOnPrimary,
       fontSize: 13,
       fontWeight: '700',
     },
@@ -393,6 +399,21 @@ export function getHomeDashboardStyles(palette) {
     /* =========================
        QUICK ACTIONS
     ========================= */
+
+    promotionalBannerScroll: {
+      marginBottom: 16,
+    },
+
+    promotionalBannerTrack: {
+      alignItems: 'center',
+    },
+
+    promotionalBannerImage: {
+      backgroundColor: palette.surface,
+      borderRadius: 10,
+      height: 88,
+      resizeMode: 'cover',
+    },
 
     quickActionsGrid: {
       flexDirection: 'row',
@@ -639,7 +660,7 @@ export function getPaymentScreenStyles(palette) {
     minHeight: 44,
   },
   primaryButtonText: {
-    color: palette.background,
+    color: palette.iconOnPrimary,
     fontSize: 13,
     fontWeight: '700',
   },
@@ -692,7 +713,7 @@ export function getPaymentScreenStyles(palette) {
   },
   serviceIconShell: {
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: 8,
     height: 44,
     justifyContent: 'center',
     marginBottom: 16,
@@ -700,9 +721,9 @@ export function getPaymentScreenStyles(palette) {
   },
   serviceCardLabel: {
     color: palette.text,
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '700',
-    lineHeight: 21,
+    lineHeight: 20,
   },
   ...createBottomTabStyles(palette),
   });
@@ -766,7 +787,7 @@ export function getCardScreenStyles(palette) {
     paddingVertical: 8,
   },
   comingSoonBadgeText: {
-    color: palette.primary,
+    color: palette.iconOnPrimary,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -802,6 +823,91 @@ export function getCardScreenStyles(palette) {
     color: palette.background,
     fontSize: 14,
     fontWeight: '700',
+  },
+  /* Virtual card styles */
+  virtualCardWrap: {
+    marginBottom: 20,
+    marginHorizontal: -16,
+    paddingHorizontal: 16,
+  },
+  virtualCardImage: {
+    width: '100%',
+    height: 210,
+    borderRadius: 16,
+    overflow: 'hidden',
+    alignSelf: 'center',
+  },
+  cardOverlayTop: {
+    position: 'absolute',
+    left: 20,
+    top: 30,
+    zIndex: 10,
+  },
+  cardNumber: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginBottom: 10,
+  },
+  cardName: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  cardOverlayBottom: {
+    position: 'absolute',
+    left: 20,
+    bottom: 20,
+    zIndex: 10,
+  },
+  cardMetaText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+    opacity: 0.95,
+  },
+  /* Card info below the virtual card image */
+  cardInfoWrap: {
+    paddingHorizontal: 16,
+    marginTop: 80,
+    paddingTop: 18,
+    paddingBottom: 28,
+  },
+  cardTitle: {
+    color: palette.text,
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  cardDescription: {
+    color: palette.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 18,
+  },
+  orderingFeeLabel: {
+    color: palette.textMuted,
+    fontSize: 13,
+    marginBottom: 6,
+  },
+  feeAmount: {
+    color: palette.text,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  orderButton: {
+    alignItems: 'center',
+    backgroundColor: palette.primaryDark,
+    borderRadius: 10,
+    justifyContent: 'center',
+    minHeight: 48,
+    marginTop: 18,
+  },
+  orderButtonText: {
+    color: palette.iconOnPrimary,
+    fontSize: 15,
+    fontWeight: '800',
   },
   ...createBottomTabStyles(palette),
   });
@@ -994,6 +1100,12 @@ export function getProfileScreenStyles(palette) {
       color: palette.primary,
       fontSize: 28,
       fontWeight: '800',
+    },
+    profileAvatarImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 999,
+      resizeMode: 'cover',
     },
     profileName: {
       color: palette.text,

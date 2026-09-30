@@ -14,7 +14,7 @@ export default function SignupScreen({ onSignup, onSignIn, themeMode = 'light' }
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: '#FFFFFF' }]}> 
+    <SafeAreaView style={[styles.screen, { backgroundColor: palette.background }]}> 
       <View style={styles.container}>
         <Text style={[styles.title, { color: palette.text }]}>Create account</Text>
         <Text style={[styles.subtitle, { color: palette.textMuted }]}>Enter your details to get started</Text>
@@ -87,7 +87,7 @@ export default function SignupScreen({ onSignup, onSignIn, themeMode = 'light' }
             onSignup?.({ name: name || 'User', email: email || '', phone, password });
           }}
         >
-          <Text style={[styles.buttonText, { color: palette.iconOnPrimary }]}>Sign up</Text>
+          <Text style={[styles.buttonText, { color: palette.onPrimary || '#fff' }]}>Sign up</Text>
         </TouchableOpacity>
 
         <View style={styles.bottomRow}>

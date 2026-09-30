@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, FlatList, Image, Platform, StatusBar as RNStatusBar, Animated } from 'react-native';
+import getSafeTop from '../utils/getSafeTop';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { getPalette } from '../styles/GlobalStyles';
@@ -15,7 +16,7 @@ const DUMMY_PACKAGES = [
 export default function GloDataScreen({ user, onBack, themeMode = 'dark', onOpenDeposit, onSuccess }) {
   const palette = getPalette(themeMode);
   const barBgColor = themeMode === 'light' ? '#fff' : '#000';
-  const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
+  const safeTop = getSafeTop();
   const [phone, setPhone] = useState('');
   const [verified, setVerified] = useState(false);
   const [verifyError, setVerifyError] = useState('');
@@ -25,6 +26,7 @@ export default function GloDataScreen({ user, onBack, themeMode = 'dark', onOpen
   const [authVisible, setAuthVisible] = useState(false);
   const [pin, setPin] = useState('');
   const pinInputRef = useRef(null);
+  const safeFocus = (r) => { try { r?.current?.focus?.(); } catch (e) {} };
   const loadingAnim = useRef(new Animated.Value(1)).current;
   const loadingLoopRef = useRef(null);
   const [voucher, setVoucher] = useState('');
@@ -165,20 +167,20 @@ export default function GloDataScreen({ user, onBack, themeMode = 'dark', onOpen
 
   React.useEffect(() => {
     if (authVisible) {
-      setTimeout(() => pinInputRef.current?.focus?.(), 220);
+      setTimeout(() => safeFocus(pinInputRef), 220);
     }
   }, [authVisible]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
-      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: 6 }]}> 
+      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: safeTop + 6 }]}> 
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Feather name="chevron-left" size={20} color={palette.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: palette.text }]}>Buy Data Bundle</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={[styles.depositButton, { backgroundColor: palette.primary }]} onPress={() => onOpenDeposit?.()}>
-            <Text style={styles.depositText}>+ Deposit</Text>
+            <Text style={[styles.depositText, { color: palette.iconOnPrimary }]}>+ Deposit</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -317,11 +319,11 @@ export default function GloDataScreen({ user, onBack, themeMode = 'dark', onOpen
             <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Total Payable</Text><Text style={[styles.authValue, { color: '#E94B4B' }]}>{'₦' + getPayableAmount().toFixed(2)}</Text></View>
 
             <Text style={[styles.pinPrompt, { color: palette.text }]}>Enter Account Pin To Authorize</Text>
-            <View style={styles.pinCircles}>
+            <TouchableOpacity activeOpacity={0.9} onPress={() => safeFocus(pinInputRef)} style={styles.pinCircles}>
               {[0,1,2,3].map((i) => (
                 <View key={i} style={[styles.pinCircle, pin.length > i && styles.pinFilled]} />
               ))}
-            </View>
+            </TouchableOpacity>
             {biometricEnabled ? (
               <TouchableOpacity onPress={tryBiometricAuth} style={{ alignSelf: 'center', marginBottom: 12 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

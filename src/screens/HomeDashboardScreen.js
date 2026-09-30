@@ -1,14 +1,21 @@
-import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View, Image } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, Image, useWindowDimensions } from 'react-native';
 // import { StatusBar } from 'expo-status-bar';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getHomeDashboardStyles, getPalette } from '../styles/GlobalStyles';
+import getSafeTop from '../utils/getSafeTop';
+import { useUser } from '../context/UserContext';
 
 const quickActions = [
   { label: 'Save money', icon: 'save' },
-  { label: 'Add money', icon: 'plus' },
+  { label: 'Invoice', icon: 'file-text' },
   { label: 'Pay bills', icon: 'file-text' },
   { label: 'Help', icon: 'help-circle' },
+];
+
+const promotionalBanners = [
+  require('../../public/banner1.jpg'),
+  require('../../public/banner2.jpg'),
 ];
 
 const services = [
@@ -109,13 +116,37 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
   );
 }
 
-export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, themeMode = 'dark', user = { name: 'Diateck', avatar: null }, onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable }) {
+export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, themeMode = 'dark', onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenRewards, onOpenSave, onOpenHelp, onOpenInvoice }) {
+  const { user } = useUser();
+  const { width } = useWindowDimensions();
   const palette = getPalette(themeMode);
   const styles = getHomeDashboardStyles(palette);
+  const promotionalBannerWidth = width - 32;
+  const promotionalBannerRef = useRef(null);
+  const [, setActivePromotionalBanner] = useState(0);
+
   const initial = (user?.name || 'U').charAt(0).toUpperCase();
+  const safeTop = getSafeTop();
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActivePromotionalBanner((currentIndex) => {
+        const nextIndex = (currentIndex + 1) % promotionalBanners.length;
+
+        promotionalBannerRef.current?.scrollTo({
+          x: nextIndex * promotionalBannerWidth,
+          animated: true,
+        });
+
+        return nextIndex;
+      });
+    }, 3500);
+
+    return () => clearInterval(timer);
+  }, [promotionalBannerWidth]);
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
       
       <ScrollView
         contentContainerStyle={styles.content}
@@ -123,7 +154,7 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
         stickyHeaderIndices={[0]}
       >
         {/* HEADER */}
-        <View style={styles.stickyHeaderWrap}>
+        <View style={[styles.stickyHeaderWrap, { paddingTop: safeTop + 6 }]}>
           <View style={styles.headerRow}>
               <View style={styles.profileAvatar}>
                 {user?.avatar ? (
@@ -168,13 +199,42 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
                 <TouchableOpacity style={styles.balanceActionButtonPrimary} onPress={() => onOpenDeposit?.()}>
                   <Text style={styles.balanceActionButtonPrimaryText}>Deposit</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.balanceActionButtonSecondary}>
+                <TouchableOpacity style={styles.balanceActionButtonSecondary} onPress={() => onOpenRewards?.()}>
                   <Text style={styles.balanceActionButtonSecondaryText}>Reward</Text>
                 </TouchableOpacity>
                 </View>
               </View>
           </View>
         </View>
+
+        <ScrollView
+          ref={promotionalBannerRef}
+          horizontal
+          pagingEnabled
+          decelerationRate="fast"
+          snapToInterval={promotionalBannerWidth}
+          snapToAlignment="start"
+          disableIntervalMomentum
+          showsHorizontalScrollIndicator={false}
+          style={styles.promotionalBannerScroll}
+          contentContainerStyle={styles.promotionalBannerTrack}
+          onMomentumScrollEnd={(event) => {
+            const nextIndex = Math.round(
+              event.nativeEvent.contentOffset.x / promotionalBannerWidth
+            );
+            setActivePromotionalBanner(
+              Math.max(0, Math.min(nextIndex, promotionalBanners.length - 1))
+            );
+          }}
+        >
+          {promotionalBanners.map((banner, index) => (
+            <Image
+              key={`promotional-banner-${index}`}
+              source={banner}
+              style={[styles.promotionalBannerImage, { width: promotionalBannerWidth }]}
+            />
+          ))}
+        </ScrollView>
 
         {/* QUICK ACTIONS */}
         <View style={styles.quickActionsGrid}>
@@ -185,13 +245,24 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
               styles={styles}
               {...action}
               onPress={() => {
-                if (action.label === 'Add money' || action.label === 'Deposit' || action.label === 'Help') {
-                  onOpenDeposit?.();
-                }
-                if (action.label === 'Pay bills') {
-                  onTabPress?.('payments');
-                }
-              }}
+                  if (action.label === 'Save money') {
+                    onOpenSave?.();
+                    return;
+                  }
+                  if (action.label === 'Invoice') {
+                    onOpenInvoice?.();
+                    return;
+                  }
+                  if (action.label === 'Add money' || action.label === 'Deposit') {
+                    onOpenDeposit?.();
+                  }
+                  if (action.label === 'Help') {
+                    onOpenHelp?.();
+                  }
+                  if (action.label === 'Pay bills') {
+                    onTabPress?.('payments');
+                  }
+                }}
             />
           ))}
         </View>
@@ -253,6 +324,6 @@ export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, th
           />
         ))}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

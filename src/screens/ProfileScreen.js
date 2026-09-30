@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, Switch, Text, TouchableOpacity, View, Modal } from 'react-native';
+import { SafeAreaView, ScrollView, Switch, Text, TouchableOpacity, View, Modal, Alert, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { getPalette, getProfileScreenStyles } from '../styles/GlobalStyles';
+import getSafeTop from '../utils/getSafeTop';
 
 const bottomTabs = [
   { key: 'home', label: 'Home', icon: 'home' },
@@ -73,10 +75,59 @@ function BottomTab({ label, icon, active, onPress, palette, styles }) {
   );
 }
 
-export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThemeModeChange, themeMode = 'dark', onOpenPersonalDetails, onOpenSecurity, user = { name: 'User', email: '' } }) {
+export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThemeModeChange, themeMode = 'dark', onOpenPersonalDetails, onOpenSecurity, onOpenHelp, onOpenVerification, onSignOut, user = { name: 'User', email: '' } }) {
   const palette = getPalette(themeMode);
   const styles = getProfileScreenStyles(palette);
+  const safeTop = getSafeTop();
   const isLightMode = themeMode === 'light';
+
+  const [localUser, setLocalUser] = useState(user);
+
+  useEffect(() => {
+    setLocalUser(user);
+  }, [user]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+        const raw = await AsyncStorage.getItem('user');
+        if (raw) setLocalUser(JSON.parse(raw));
+      } catch (e) {
+        // ignore
+      }
+    })();
+  }, []);
+
+  const pickImage = async () => {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (perm.status !== 'granted') {
+        Alert.alert('Permission required', 'Permission to access photos is required to choose an avatar.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      const uri = result?.assets?.[0]?.uri ?? result?.uri;
+      if (uri) {
+        const updated = { ...(localUser || user), avatar: { uri } };
+        setLocalUser(updated);
+        try {
+          const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+          await AsyncStorage.setItem('user', JSON.stringify(updated));
+        } catch (e) {
+          // ignore
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
 
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
@@ -102,17 +153,17 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
   const agentButtonBg = '#FFFFFF';
   const agentButtonTextColor = themeMode === 'dark' ? '#1F1F1F' : palette.primary;
   const tierBadgeBg = themeMode === 'dark' ? palette.surfaceRaised : palette.primaryMuted;
-  const tierBadgeTextColor = '#FFFFFF';
+  const tierBadgeTextColor = themeMode === 'dark' ? '#FFFFFF' : palette.text;
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
       
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[0]}
       >
-        <View style={styles.stickyHeaderWrap}>
+        <View style={[styles.stickyHeaderWrap, { paddingTop: safeTop + 6 }]}>
           <View style={styles.headerRow}>
             <View>
               <Text style={styles.headerEyebrow}>Profile</Text>
@@ -126,11 +177,15 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
         </View>
 
         <View style={styles.profileCard}>
-          <View style={styles.profileAvatar}>
-            <Text style={styles.profileAvatarText}>{(user?.name || 'U').charAt(0).toUpperCase()}</Text>
-          </View>
-          <Text style={styles.profileName}>{user?.name || 'User'}</Text>
-          <Text style={styles.profileHandle}>{user?.email || ''}</Text>
+          <TouchableOpacity activeOpacity={0.9} onPress={pickImage} style={styles.profileAvatar}>
+            {localUser?.avatar ? (
+              <Image source={localUser.avatar} style={styles.profileAvatarImage} />
+            ) : (
+              <Text style={styles.profileAvatarText}>{(localUser?.name || 'U').charAt(0).toUpperCase()}</Text>
+            )}
+          </TouchableOpacity>
+          <Text style={styles.profileName}>{localUser?.name || 'User'}</Text>
+          <Text style={styles.profileHandle}>{localUser?.email || ''}</Text>
           <View style={[styles.tierBadge, { backgroundColor: tierBadgeBg }] }>
             <Text style={[styles.tierBadgeText, { color: tierBadgeTextColor }]}>Tier 2 verified</Text>
           </View>
@@ -182,6 +237,9 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
                   if (row.title === 'Security') {
                     onOpenSecurity?.();
                   }
+                  if (row.title === 'Limits and verification') {
+                    onOpenVerification?.();
+                  }
                 }}
               />
               {index < profileRows.length - 1 ? <View style={styles.divider} /> : null}
@@ -193,7 +251,14 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
           <Text style={styles.sectionTitle}>Support</Text>
           {supportRows.map((row, index) => (
             <View key={row.title}>
-              <SettingRow palette={palette} styles={styles} {...row} />
+              <SettingRow palette={palette} styles={styles} {...row} onPress={() => {
+                if (row.title === 'Help center') {
+                  // open help chat
+                  if (typeof onOpenHelp === 'function') onOpenHelp();
+                  setSettingsModalVisible(false);
+                  return;
+                }
+              }} />
               {index < supportRows.length - 1 ? <View style={styles.divider} /> : null}
             </View>
           ))}
@@ -230,6 +295,49 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
                 thumbColor={biometricEnabled ? '#fff' : undefined}
               />
             </View>
+            <View style={{ paddingVertical: 12 }}>
+              <TouchableOpacity
+                onPress={() => {
+                  Alert.alert(
+                    'Log out',
+                    'Are you sure you want to sign out of your account?',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Log out',
+                        style: 'destructive',
+                        onPress: async () => {
+                          try {
+                            const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+                            await AsyncStorage.removeItem('user');
+                          } catch (e) {
+                            // ignore
+                          }
+                          setSettingsModalVisible(false);
+                          if (typeof onSignOut === 'function') onSignOut();
+                        },
+                      },
+                    ],
+                    { cancelable: true }
+                  );
+                }}
+                style={{
+                  marginTop: 6,
+                  paddingVertical: 12,
+                  borderRadius: 10,
+                  backgroundColor: palette.surface,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: palette.border,
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  gap: 10,
+                }}
+              >
+                <Feather name="log-out" size={16} color={palette.error} />
+                <Text style={{ color: palette.error, fontWeight: '700' }}>Log out</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -247,6 +355,6 @@ export default function ProfileScreen({ activeTab = 'profile', onTabPress, onThe
           />
         ))}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

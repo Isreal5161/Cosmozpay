@@ -6,12 +6,12 @@ export default function WelcomeScreen({ user = { name: 'User' }, onContinue, onS
   const palette = getPalette(themeMode);
 
   return (
-    <View style={[styles.screen, { backgroundColor: '#FFFFFF' }]}> 
+    <View style={[styles.screen, { backgroundColor: palette.background }]}> 
       <View style={styles.topIllustration}>
-        <View style={[styles.illustrationCard, { backgroundColor: '#E8F8FF' }]}>
+        <View style={[styles.illustrationCard, { backgroundColor: palette.surfaceRaised || palette.surface }]}>
           <Image source={require('../../public/paybill.png')} style={styles.illustrationImage} resizeMode="contain" />
         </View>
-        <View style={[styles.illustrationCard, { backgroundColor: '#F6F2FF' }] }>
+        <View style={[styles.illustrationCard, { backgroundColor: palette.surface }] }>
           <Image source={require('../../public/Savings-image.png')} style={styles.illustrationImage} resizeMode="contain" />
         </View>
       </View>
@@ -21,20 +21,20 @@ export default function WelcomeScreen({ user = { name: 'User' }, onContinue, onS
         <Text style={[styles.title, { color: palette.text }]}>What would you like to do?</Text>
 
         <View style={styles.cardRow}>
-          <View style={[styles.card, { backgroundColor: '#E8F8FF' }]}>
-            <Text style={styles.cardLabel}>Pay bills</Text>
-            <Text style={styles.cardSub}>Pay bills with Ease</Text>
+          <View style={[styles.card, { backgroundColor: palette.surfaceRaised || palette.surface }]}>
+            <Text style={[styles.cardLabel, { color: palette.text }]}>Pay bills</Text>
+            <Text style={[styles.cardSub, { color: palette.textMuted }]}>Pay bills with Ease</Text>
           </View>
-          <View style={[styles.card, { backgroundColor: '#F6F2FF' }]}>
-            <Text style={styles.cardLabel}>Save</Text>
-            <Text style={styles.cardSub}>Save for the future</Text>
+          <View style={[styles.card, { backgroundColor: palette.surface }]}>
+            <Text style={[styles.cardLabel, { color: palette.text }]}>Save</Text>
+            <Text style={[styles.cardSub, { color: palette.textMuted }]}>Save for the future</Text>
           </View>
         </View>
       </View>
 
       <View style={styles.footer}>
-        <TouchableOpacity activeOpacity={0.9} style={[styles.primaryButton, { backgroundColor: '#111827' }]} onPress={() => onContinue?.()}>
-          <Text style={[styles.primaryButtonText, { color: '#FFFFFF' }]}>Continue</Text>
+        <TouchableOpacity activeOpacity={0.9} style={[styles.primaryButton, { backgroundColor: palette.primary }]} onPress={() => onContinue?.()}>
+          <Text style={[styles.primaryButtonText, { color: palette.onPrimary || '#FFFFFF' }]}>Continue</Text>
         </TouchableOpacity>
       </View>
     </View>

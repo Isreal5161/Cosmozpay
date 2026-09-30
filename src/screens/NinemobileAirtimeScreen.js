@@ -1,14 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Animated, Image, Platform, StatusBar as RNStatusBar, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import getSafeTop from '../utils/getSafeTop';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { getPalette } from '../styles/GlobalStyles';
 import VerifiedNumberSuggest, { saveVerifiedNumber } from '../components/VerifiedNumberSuggest';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import KeyboardWrapper from '../components/KeyboardWrapper';
 
 export default function NinemobileAirtimeScreen({ user, onBack, themeMode = 'dark', onOpenDeposit, onSuccess }) {
   const palette = getPalette(themeMode);
-  const safeTop = Platform.OS === 'android' ? (RNStatusBar.currentHeight ? RNStatusBar.currentHeight / 2 : 12) : 0;
+  const safeTop = getSafeTop();
   const [phone, setPhone] = useState('');
   const [verified, setVerified] = useState(false);
   const [verifyError, setVerifyError] = useState('');
@@ -130,14 +131,14 @@ export default function NinemobileAirtimeScreen({ user, onBack, themeMode = 'dar
   const proceedLabel = !phone ? 'Insert number' : (numericAmount <= 0 ? 'Enter amount' : 'Proceed');
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
-      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: 6 }]}> 
+      <View style={[styles.header, { backgroundColor: palette.surfaceRaised, paddingTop: safeTop + 6 }]}> 
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Feather name="chevron-left" size={20} color={palette.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: palette.text }]}>Buy Airtime Topup</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={[styles.depositButton, { backgroundColor: palette.primary }]} onPress={() => onOpenDeposit?.()}>
-            <Text style={styles.depositText}>+ Deposit</Text>
+            <Text style={[styles.depositText, { color: palette.iconOnPrimary }]}>+ Deposit</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -156,15 +157,7 @@ export default function NinemobileAirtimeScreen({ user, onBack, themeMode = 'dar
         <Text style={[styles.dialText, { color: palette.textMuted }]}>Dial *232# to check airtime balance</Text>
       </View>
 
-      <KeyboardAwareScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
-        enableOnAndroid={true}
-        extraScrollHeight={Platform.OS === 'ios' ? 20 : 100}
-        keyboardOpeningTime={0}
-        enableAutomaticScroll={true}
-        keyboardShouldPersistTaps="handled"
-      >
+      <KeyboardWrapper contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}>
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()} accessible={false}>
           <View style={{ flex: 1 }}>
             <View style={styles.content}>
@@ -249,7 +242,7 @@ export default function NinemobileAirtimeScreen({ user, onBack, themeMode = 'dar
             </View>
           </View>
         </TouchableWithoutFeedback>
-      </KeyboardAwareScrollView>
+      </KeyboardWrapper>
 
       {processing && (
         <View style={styles.processingOverlay} pointerEvents="none">
@@ -275,7 +268,7 @@ export default function NinemobileAirtimeScreen({ user, onBack, themeMode = 'dar
             <View style={styles.authRow}><Text style={[styles.authLabel, { color: palette.textMuted }]}>Total Payable</Text><Text style={[styles.authValue, { color: '#E94B4B' }]}>{'₦' + Math.max(0, (parseFloat(String(amount).replace(/[^0-9.]/g, ''))||0) - (voucherApplied ? voucherDiscount : 0)).toFixed(2)}</Text></View>
 
             <Text style={[styles.pinPrompt, { color: palette.text }]}>Enter Account Pin To Authorize</Text>
-            <View style={styles.pinCircles}>
+            <TouchableOpacity activeOpacity={0.9} onPress={() => pinInputRef.current?.focus?.()} style={styles.pinCircles}>
               {[0,1,2,3].map((i) => (
                 <View
                   key={i}
@@ -285,7 +278,7 @@ export default function NinemobileAirtimeScreen({ user, onBack, themeMode = 'dar
                   ]}
                 />
               ))}
-            </View>
+            </TouchableOpacity>
             {biometricEnabled ? (
               <TouchableOpacity onPress={async () => {
                 try {
