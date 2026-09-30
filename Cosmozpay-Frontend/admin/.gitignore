@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+.next/
+.vercel/
+.cache/
+.vite/
+coverage/
+*.log
+*.tsbuildinfo
+.env*
+!.env.example
+build-output.txt
