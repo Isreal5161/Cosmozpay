@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAdminAuth } from '../auth/AdminAuthContext';
 
 const links = [
   { to: '/', label: 'Dashboard' },
@@ -24,6 +25,14 @@ const links = [
 ];
 
 function Sidebar() {
+  const { logout } = useAdminAuth();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await logout();
+    navigate('/login', { replace: true });
+  }
+
   return (
     <aside className="sidebar">
       <div className="logo">CosmozPay Admin</div>
@@ -32,6 +41,14 @@ function Sidebar() {
           {link.label}
         </NavLink>
       ))}
+      <button
+        className="nav-link"
+        type="button"
+        onClick={() => void handleLogout()}
+        style={{ border: 0, background: 'transparent', cursor: 'pointer', font: 'inherit', textAlign: 'left' }}
+      >
+        Logout
+      </button>
     </aside>
   );
 }

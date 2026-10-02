@@ -1,4 +1,6 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useAdminAuth } from './auth/AdminAuthContext';
+import AdminLogin from './pages/AdminLogin/AdminLogin';
 import DashboardPage from './pages/DashboardPage';
 import UsersPage from './pages/UsersPage';
 import WalletPage from './pages/WalletPage';
@@ -23,6 +25,67 @@ import MonitoringPage from './pages/MonitoringPage';
 import Sidebar from './components/Sidebar';
 
 function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginRoute />} />
+      <Route path="/*" element={<ProtectedDashboard />} />
+    </Routes>
+  );
+}
+
+function LoginRoute() {
+  const { isAuthenticated, isInitializing } = useAdminAuth();
+  const location = useLocation();
+  if (isInitializing) return <AuthenticationLoading />;
+  if (isAuthenticated) {
+    const state = location.state as { from?: unknown } | null;
+    return <Navigate replace to={getSafeInternalPath(state?.from)} />;
+  }
+  return <AdminLogin />;
+}
+
+function ProtectedDashboard() {
+  const { isAuthenticated, isInitializing } = useAdminAuth();
+  const location = useLocation();
+  if (isInitializing) return <AuthenticationLoading />;
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        replace
+        to="/login"
+        state={{ from: `${location.pathname}${location.search}${location.hash}` }}
+      />
+    );
+  }
+  return <DashboardShell />;
+}
+
+function AuthenticationLoading() {
+  return (
+    <main
+      aria-busy="true"
+      aria-live="polite"
+      style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', color: '#5b35b5' }}
+    >
+      Checking administrator session…
+    </main>
+  );
+}
+
+function getSafeInternalPath(candidate: unknown): string {
+  if (typeof candidate !== 'string' || !candidate.startsWith('/') || candidate.startsWith('//')) {
+    return '/';
+  }
+  try {
+    const destination = new URL(candidate, window.location.origin);
+    if (destination.origin !== window.location.origin || destination.pathname === '/login') return '/';
+    return `${destination.pathname}${destination.search}${destination.hash}`;
+  } catch {
+    return '/';
+  }
+}
+
+function DashboardShell() {
   return (
     <div className="app-shell">
       <Sidebar />
