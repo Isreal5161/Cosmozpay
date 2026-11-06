@@ -426,7 +426,6 @@ export const adminMockService = {
   async updateKyc(kycId: string, action: 'approve' | 'reject' | 'resubmit') { await wait(); const item = state.kyc.find((row) => row.id === kycId); if (!item) return null; if (action === 'approve') { item.status = 'Approved'; item.approvedDate = new Date().toISOString().slice(0, 10); } if (action === 'reject') { item.status = 'Rejected'; item.reason = 'Needs clearer document'; } if (action === 'resubmit') { item.status = 'Resubmission'; item.reason = 'Please reupload'; } return item; },
   async fetchFraud() { await wait(); return state.fraud; },
   async fetchReports() { await wait(); return mockData.reports; },
-  async fetchDashboardSummary() { await wait(); return { metrics: mockData.dashboard.metrics, pendingKyc: state.kyc.filter((row) => row.status === 'Pending').length, failedTransactions: state.transactions.filter((row) => row.status === 'Failed').length, providerHealth: 'Healthy' }; },
 };
 
 export default adminMockService;

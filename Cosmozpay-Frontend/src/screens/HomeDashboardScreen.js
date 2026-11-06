@@ -1,0 +1,317 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, Image, useWindowDimensions } from 'react-native';
+// import { StatusBar } from 'expo-status-bar';
+import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { getHomeDashboardStyles, getPalette } from '../styles/GlobalStyles';
+import getSafeTop from '../utils/getSafeTop';
+import { useUser } from '../context/UserContext';
+
+const quickActions = [
+  { label: 'Save money', icon: 'save' },
+  { label: 'Invoice', icon: 'file-text' },
+  { label: 'Pay bills', icon: 'file-text' },
+  { label: 'Help', icon: 'help-circle' },
+];
+
+const promotionalBanners = [
+  require('../../public/banner1.jpg'),
+  require('../../public/banner2.jpg'),
+];
+
+const services = [
+  { label: 'Airtime', icon: 'phone-portrait-outline', color: '#FFC34D' },
+  { label: 'Data', icon: 'wifi-outline', color: '#FF7A6C' },
+  { label: 'Electricity', icon: 'flash-outline', color: '#F4A43A' },
+  { label: 'TV', icon: 'tv-outline', color: '#42D38A' },
+];
+
+const bottomTabs = [
+  { key: 'home', label: 'Home', icon: 'home' },
+  { key: 'payments', label: 'Payments', icon: 'send' },
+  { key: 'cards', label: 'Cards', icon: 'credit-card' },
+  { key: 'activity', label: 'Activity', icon: 'file-text' },
+  { key: 'profile', label: 'Profile', icon: 'grid' },
+];
+
+function QuickAction({ label, icon, palette, styles, onPress }) {
+  return (
+    <TouchableOpacity activeOpacity={0.85} style={styles.actionButton} onPress={onPress}>
+      <View style={styles.actionIconWrap}>
+        <Feather color={palette.icon} name={icon} size={14} />
+      </View>
+      <Text style={styles.actionLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function ServiceTile({ label, color, icon, palette, styles, onPress }) {
+  return (
+    <TouchableOpacity activeOpacity={0.85} style={styles.serviceTile} onPress={onPress}>
+      <View style={[styles.serviceIconWrap, { backgroundColor: color }]}>
+        <Ionicons color={palette.background} name={icon} size={14} />
+      </View>
+      <Text style={styles.serviceLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function TransactionRow({ title, subtitle, amount, positive, icon, palette, styles, onPress }) {
+  return (
+    <TouchableOpacity style={styles.transactionRow} onPress={onPress} activeOpacity={0.6}>
+        <View style={styles.transactionLeft}>
+        <View style={styles.transactionIconWrap}>
+          <Feather color={palette.icon} name={icon} size={16} />
+        </View>
+        <View>
+          <Text style={styles.transactionTitle}>{title}</Text>
+          <Text style={styles.transactionSubtitle}>{subtitle}</Text>
+        </View>
+      </View>
+      <Text
+        style={[
+          styles.transactionAmount,
+          positive ? styles.amountPositive : styles.amountNegative,
+        ]}
+      >
+        {amount}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+function BottomTab({ label, icon, active, onPress, palette, styles }) {
+  return (
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress} style={styles.bottomTab}>
+      <View style={[styles.bottomTabIcon, active && styles.bottomTabIconActive]}>
+        <Feather color={active ? palette.text : palette.textMuted} name={icon} size={20} />
+      </View>
+      <Text style={[styles.bottomTabLabel, active && styles.bottomTabLabelActive]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+export default function HomeDashboardScreen({ activeTab = 'home', onTabPress, themeMode = 'dark', onOpenDeposit, onOpenData, onOpenAirtime, onOpenElectricity, onOpenTvcable, onOpenRewards, onOpenSave, onOpenHelp, onOpenInvoice, onSelectTransaction }) {
+  const { user, activities } = useUser();
+  const { width } = useWindowDimensions();
+  const palette = getPalette(themeMode);
+  const styles = getHomeDashboardStyles(palette);
+  const promotionalBannerWidth = width - 32;
+  const promotionalBannerRef = useRef(null);
+  const [, setActivePromotionalBanner] = useState(0);
+
+  const initial = (user?.name || 'U').charAt(0).toUpperCase();
+  const safeTop = getSafeTop();
+  const totalBalance = Number(user?.balance || 0);
+  const pendingPayouts = 0;
+  const availableBalance = Number(totalBalance.toFixed(2));
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActivePromotionalBanner((currentIndex) => {
+        const nextIndex = (currentIndex + 1) % promotionalBanners.length;
+
+        promotionalBannerRef.current?.scrollTo({
+          x: nextIndex * promotionalBannerWidth,
+          animated: true,
+        });
+
+        return nextIndex;
+      });
+    }, 3500);
+
+    return () => clearInterval(timer);
+  }, [promotionalBannerWidth]);
+
+  return (
+    <SafeAreaView style={[styles.screen, { backgroundColor: palette.background, paddingTop: safeTop }]}> 
+      
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[0]}
+      >
+        {/* HEADER */}
+        <View style={[styles.stickyHeaderWrap, { paddingTop: safeTop + 6 }]}>
+          <View style={styles.headerRow}>
+              <View style={styles.profileAvatar}>
+                {user?.avatar ? (
+                  <Image source={user.avatar} style={styles.profileAvatarImage} />
+                ) : (
+                  <Text style={styles.profileAvatarText}>{initial}</Text>
+                )}
+              </View>
+
+            <View style={styles.headerTextWrap}>
+              <Text style={styles.headerEyebrow}>Welcome back</Text>
+              <Text style={styles.headerTitle}>{user?.name || 'User'}</Text>
+            </View>
+
+            <View style={styles.headerActionsGroup}>
+              <TouchableOpacity activeOpacity={0.85} style={styles.headerIconButtonPrimary}>
+                <Feather color={palette.icon} name="bell" size={16} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.balanceCard}>
+            <View style={styles.balancePatternTopRight} />
+            <View style={styles.balancePatternCurve} />
+            <View style={styles.balancePatternBottomLeft} />
+            <View style={styles.balanceInner}>
+              <Text style={styles.totalLabel}>Total Wallet Balance</Text>
+              <Text style={styles.balanceAmount}>NGN {totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+
+                <View style={styles.balanceMiniRow}>
+                  <View style={styles.miniBalanceBox}>
+                    <Text style={styles.miniBalanceLabel}>Pending payouts</Text>
+                    <Text style={styles.miniBalanceValue}>NGN {pendingPayouts.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                  </View>
+                  <View style={styles.miniBalanceBox}>
+                    <Text style={styles.miniBalanceLabel}>Available</Text>
+                    <Text style={styles.miniBalanceValue}>NGN {availableBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.balanceActions}>
+                <TouchableOpacity style={styles.balanceActionButtonPrimary} onPress={() => onOpenDeposit?.()}>
+                  <Text style={styles.balanceActionButtonPrimaryText}>Deposit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.balanceActionButtonSecondary} onPress={() => onOpenRewards?.()}>
+                  <Text style={styles.balanceActionButtonSecondaryText}>Reward</Text>
+                </TouchableOpacity>
+                </View>
+              </View>
+          </View>
+        </View>
+
+        <ScrollView
+          ref={promotionalBannerRef}
+          horizontal
+          pagingEnabled
+          decelerationRate="fast"
+          snapToInterval={promotionalBannerWidth}
+          snapToAlignment="start"
+          disableIntervalMomentum
+          showsHorizontalScrollIndicator={false}
+          style={styles.promotionalBannerScroll}
+          contentContainerStyle={styles.promotionalBannerTrack}
+          onMomentumScrollEnd={(event) => {
+            const nextIndex = Math.round(
+              event.nativeEvent.contentOffset.x / promotionalBannerWidth
+            );
+            setActivePromotionalBanner(
+              Math.max(0, Math.min(nextIndex, promotionalBanners.length - 1))
+            );
+          }}
+        >
+          {promotionalBanners.map((banner, index) => (
+            <Image
+              key={`promotional-banner-${index}`}
+              source={banner}
+              style={[styles.promotionalBannerImage, { width: promotionalBannerWidth }]}
+            />
+          ))}
+        </ScrollView>
+
+        {/* QUICK ACTIONS */}
+        <View style={styles.quickActionsGrid}>
+          {quickActions.map((action) => (
+            <QuickAction
+              key={action.label}
+              palette={palette}
+              styles={styles}
+              {...action}
+              onPress={() => {
+                  if (action.label === 'Save money') {
+                    onOpenSave?.();
+                    return;
+                  }
+                  if (action.label === 'Invoice') {
+                    onOpenInvoice?.();
+                    return;
+                  }
+                  if (action.label === 'Add money' || action.label === 'Deposit') {
+                    onOpenDeposit?.();
+                  }
+                  if (action.label === 'Help') {
+                    onOpenHelp?.();
+                  }
+                  if (action.label === 'Pay bills') {
+                    onTabPress?.('payments');
+                  }
+                }}
+            />
+          ))}
+        </View>
+
+        {/* SERVICES */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Quick access</Text>
+          <TouchableOpacity onPress={() => onTabPress?.('payments')}>
+            <Text style={styles.sectionLink}>More</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.servicesGrid}>
+          {services.map((service) => (
+            <ServiceTile
+              key={service.label}
+              palette={palette}
+              styles={styles}
+              {...service}
+              onPress={() => {
+                if (service.label === 'Data') onOpenData?.();
+                if (service.label === 'Airtime') onOpenAirtime?.();
+                if (service.label === 'Electricity') onOpenElectricity?.();
+                if (service.label === 'TV') onOpenTvcable?.();
+              }}
+            />
+          ))}
+        </View>
+
+        {/* TRANSACTIONS */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Transactions</Text>
+          <TouchableOpacity onPress={() => onTabPress?.('activity')}>
+            <Text style={styles.sectionLink}>View all</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.transactionsCard}>
+          {activities?.length > 0 ? (
+            activities.slice(0, 3).map((transaction, index) => (
+              <View key={transaction.id || transaction.title}>
+                <TransactionRow 
+                  palette={palette} 
+                  styles={styles} 
+                  {...transaction}
+                  onPress={() => onSelectTransaction?.(transaction)}
+                />
+                {index < Math.min(3, activities.length) - 1 && <View style={styles.rowDivider} />}
+              </View>
+            ))
+          ) : (
+            <Text style={{ color: palette.textMuted, textAlign: 'center', padding: 16 }}>No transactions yet</Text>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* BOTTOM NAV */}
+      <View style={styles.bottomNav}>
+        {bottomTabs.map((tab) => (
+          <BottomTab
+            key={tab.key}
+            active={activeTab === tab.key}
+            icon={tab.icon}
+            label={tab.label}
+            onPress={() => onTabPress?.(tab.key)}
+            palette={palette}
+            styles={styles}
+          />
+        ))}
+      </View>
+    </SafeAreaView>
+  );
+}
