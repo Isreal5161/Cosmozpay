@@ -1,11 +1,9 @@
-import type { AdminUser, KycRecord, TransactionRecord } from '../services/mockAdminService';
+import type { KycRecord, TransactionRecord } from '../services/mockAdminService';
 
 type MockRow = Record<string, string | number>;
 
 // Mock data for all admin pages
 export const mockData = {
-  // Remove fixture data — use live backend or show empty states in UI
-  users: [] as AdminUser[],
   wallets: [] as MockRow[],
   transactions: [] as TransactionRecord[],
   payments: [] as MockRow[],

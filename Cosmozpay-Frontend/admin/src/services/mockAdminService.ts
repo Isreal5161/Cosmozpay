@@ -1,24 +1,5 @@
 import { mockData } from '../data/mockData';
 
-export interface AdminUser {
-  id: number;
-  name: string;
-  email: string;
-  kycStatus: string;
-  wallet: number;
-  status: string;
-  joinDate: string;
-  phone: string;
-  location: string;
-  role: string;
-  loginHistory: Array<{ timestamp: string; ip: string; device: string; status: string }>;
-  activityLog: Array<{ timestamp: string; action: string; detail: string }>;
-  kycInfo: { idType: string; status: string; document: string; selfie: string; reason?: string };
-  walletInfo: { balance: number; reserved: number; ledger: Array<{ id: string; type: string; amount: number; note: string; date: string; status?: string }> };
-  transactions: TransactionRecord[];
-}
-
-
 export interface WalletLedgerItem {
   id: string;
   user: string;
@@ -205,38 +186,6 @@ const createService = ({
 };
 
 const createState = () => {
-  const baseUsers: AdminUser[] = mockData.users.map((user, index) => ({
-    ...user,
-    role: index % 2 === 0 ? 'Customer' : 'Merchant',
-    phone: `+23480${index + 100}000${index + 1}`,
-    location: index % 2 === 0 ? 'Lagos' : 'Abuja',
-    loginHistory: [
-      { timestamp: '2026-01-05 09:10', ip: '192.168.0.1', device: 'iPhone 14', status: 'Success' },
-      { timestamp: '2026-01-04 18:02', ip: '192.168.0.2', device: 'Android', status: 'Success' },
-    ],
-    activityLog: [
-      { timestamp: '2026-01-05', action: 'Wallet topped up', detail: 'Manual top-up via admin' },
-      { timestamp: '2026-01-04', action: 'Purchased airtime', detail: 'MTN recharge' },
-    ],
-    kycInfo: {
-      idType: user.kycStatus === 'Verified' ? 'National ID' : 'Passport',
-      status: user.kycStatus as 'Verified' | 'Pending' | 'Rejected',
-      document: '/docs/id.pdf',
-      selfie: '/docs/selfie.jpg',
-      reason: user.kycStatus === 'Rejected' ? 'Document mismatch' : undefined,
-    },
-    walletInfo: {
-      balance: user.wallet,
-      reserved: user.wallet > 1000 ? 200 : 0,
-      ledger: [
-        { id: `L${index + 1}`, type: 'credit', amount: user.wallet, note: 'Initial wallet balance', date: '2026-01-01' },
-      ],
-    },
-    transactions: [
-      { id: `TX${index + 1}`, user: user.name, userId: user.id, amount: 500, type: 'Airtime', provider: 'MTN', reference: `REF-${index + 100}`, status: 'Successful', date: '2026-01-05', time: '09:05', paymentMethod: 'Wallet', bank: 'N/A', description: 'Initial sample transaction', category: 'Airtime', timeline: [{ title: 'Initiated', detail: 'Transaction created', time: '2026-01-05 09:00' }, { title: 'Provider response', detail: 'Accepted', time: '2026-01-05 09:02' }], auditLogs: [{ action: 'Settled', actor: 'System', time: '2026-01-05 09:10' }] },
-    ],
-  }));
-
   const baseTransactions: TransactionRecord[] = mockData.transactions.map((txn, index) => ({
     ...txn,
     userId: index + 1,
@@ -359,7 +308,7 @@ const createState = () => {
     ],
   };
 
-  return { users: baseUsers, transactions: baseTransactions, ledger: baseLedger, services: baseServices, banners: baseBanners, notifications: baseNotifications, kyc: baseKyc, fraud: baseFraud };
+  return { transactions: baseTransactions, ledger: baseLedger, services: baseServices, banners: baseBanners, notifications: baseNotifications, kyc: baseKyc, fraud: baseFraud };
 };
 
 const state = createState();
@@ -367,39 +316,6 @@ const state = createState();
 const wait = (ms = 200) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const adminMockService = {
-  async fetchUsers() { await wait(); return state.users; },
-  async fetchUser(userId: number) { await wait(); return state.users.find((u) => u.id === userId) ?? null; },
-  async updateUserAction(userId: number, action: string) {
-    await wait();
-    const user = state.users.find((u) => u.id === userId);
-    if (!user) return null;
-    if (action === 'freeze') user.status = 'Frozen';
-    if (action === 'unfreeze') user.status = 'Active';
-    if (action === 'suspend') user.status = 'Suspended';
-    if (action === 'activate') user.status = 'Active';
-    if (action === 'delete') user.status = 'Deleted';
-    return user;
-  },
-  async creditWallet(userId: number, amount: number, reason: string) {
-    await wait();
-    const user = state.users.find((u) => u.id === userId);
-    if (!user) return null;
-    user.wallet += amount;
-    user.walletInfo.balance = user.wallet;
-    user.walletInfo.ledger.unshift({ id: `L${Date.now()}`, type: 'credit', amount, note: reason, date: new Date().toISOString().slice(0, 10) });
-    return user;
-  },
-  async debitWallet(userId: number, amount: number, reason: string) {
-    await wait();
-    const user = state.users.find((u) => u.id === userId);
-    if (!user) return null;
-    user.wallet = Math.max(0, user.wallet - amount);
-    user.walletInfo.balance = user.wallet;
-    user.walletInfo.ledger.unshift({ id: `L${Date.now()}`, type: 'debit', amount, note: reason, date: new Date().toISOString().slice(0, 10) });
-    return user;
-  },
-  async resetPin(userId: number) { await wait(); return state.users.find((u) => u.id === userId) ?? null; },
-  async resetPassword(userId: number) { await wait(); return state.users.find((u) => u.id === userId) ?? null; },
   async fetchWalletLedger() { await wait(); return state.ledger; },
   async addWalletLedger(entry: WalletLedgerItem) { await wait(); state.ledger.unshift(entry); return entry; },
   async fetchTransactions() { await wait(); return state.transactions; },
