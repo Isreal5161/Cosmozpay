@@ -124,6 +124,7 @@ export interface AdminActivityEvent {
 }
 
 export interface AdminSession {
+  session_id: string;
   status: string | null;
   created_at: string | null;
   last_activity_at: string | null;
@@ -288,6 +289,8 @@ function parseActivity(value: unknown): AdminActivityEvent {
 function parseSession(value: unknown): AdminSession {
   if (
     !isRecord(value) ||
+    typeof value.session_id !== 'string' ||
+    !value.session_id.trim() ||
     !isOptionalString(value.status) ||
     !isOptionalString(value.created_at) ||
     !isOptionalString(value.last_activity_at) ||
@@ -494,6 +497,18 @@ export async function fetchAdminUserSessions(userId: string): Promise<AdminSessi
   const response = unwrapServiceData(await requestAdminApi(`/admin/users/${encodeURIComponent(userId)}/sessions`));
   if (!Array.isArray(response)) throw new Error('The server returned an invalid session list.');
   return response.map(parseSession);
+}
+
+export async function revokeAdminUserSession(
+  userId: string,
+  sessionId: string,
+  reason: string,
+): Promise<void> {
+  const params = new URLSearchParams({ reason: reason.trim() });
+  await requestAdminApi(
+    `/admin/users/${encodeURIComponent(userId)}/sessions/${encodeURIComponent(sessionId)}/revoke?${params.toString()}`,
+    { method: 'POST' },
+  );
 }
 
 export async function fetchAdminUserSessionHistory(

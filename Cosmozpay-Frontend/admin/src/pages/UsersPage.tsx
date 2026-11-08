@@ -14,6 +14,7 @@ import {
   fetchAdminUsers,
   manageAdminUser,
   reviewAdminUserKyc,
+  revokeAdminUserSession,
   revokeAdminUserSessions,
   type AdminActivityEvent,
   type AdminKycRecord,
@@ -134,6 +135,7 @@ function UsersPage() {
   const [kycLoading, setKycLoading] = useState(false);
   const [kycError, setKycError] = useState<string | null>(null);
   const [kycRevision, setKycRevision] = useState(0);
+  const [kycPage, setKycPage] = useState(1);
   const [pendingKycReview, setPendingKycReview] = useState<{ record: AdminKycRecord; action: 'approved' | 'rejected' } | null>(null);
   const [kycReviewNotes, setKycReviewNotes] = useState('');
   const [kycReviewLoading, setKycReviewLoading] = useState(false);
@@ -149,6 +151,7 @@ function UsersPage() {
   const [sessionHistoryLoading, setSessionHistoryLoading] = useState(false);
   const [sessionHistoryError, setSessionHistoryError] = useState<string | null>(null);
   const [sessionRevision, setSessionRevision] = useState(0);
+  const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
   const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
   const [revokeLoading, setRevokeLoading] = useState(false);
@@ -292,14 +295,23 @@ function UsersPage() {
     let active = true;
     setKycLoading(true);
     setKycError(null);
-    fetchAdminUserKyc(detailUserId)
-      .then((result) => { if (active) setKycRecords(result); })
+    setKycRecords(null);
+    fetchAdminUserKyc(detailUserId, kycPage, PROFILE_PAGE_SIZE)
+      .then((result) => {
+        if (!active) return;
+        const lastPage = Math.max(result.total_pages, 1);
+        if (kycPage > lastPage) {
+          setKycPage(lastPage);
+          return;
+        }
+        setKycRecords(result);
+      })
       .catch((cause: unknown) => {
         if (active) setKycError(cause instanceof Error ? cause.message : 'Unable to load KYC records.');
       })
       .finally(() => { if (active) setKycLoading(false); });
     return () => { active = false; };
-  }, [detailUserId, tab, kycRevision, profileRefresh]);
+  }, [detailUserId, tab, kycPage, kycRevision, profileRefresh]);
 
   useEffect(() => {
     if (!detailUserId || tab !== 'Activity') return;
@@ -355,6 +367,7 @@ function UsersPage() {
     setTransactionStartDate('');
     setTransactionEndDate('');
     setActivityPage(1);
+    setKycPage(1);
     setSessionHistoryPage(1);
     setDetailUserId(userId);
   };
@@ -444,6 +457,20 @@ function UsersPage() {
       setToast(cause instanceof Error ? cause.message : 'Unable to revoke user sessions.');
     } finally {
       setRevokeLoading(false);
+    }
+  };
+
+  const revokeSession = async (session: AdminSession) => {
+    if (!detailUserId || !window.confirm(`Revoke session ${session.session_id}?`)) return;
+    setRevokingSessionId(session.session_id);
+    try {
+      await revokeAdminUserSession(detailUserId, session.session_id, 'admin_revoke');
+      setToast('Session revoked successfully.');
+      setSessionRevision((revision) => revision + 1);
+    } catch (cause) {
+      setToast(cause instanceof Error ? cause.message : 'Unable to revoke this session.');
+    } finally {
+      setRevokingSessionId(null);
     }
   };
 
@@ -695,7 +722,13 @@ function UsersPage() {
                   </article>
                 ))}
                 {kycRecords && kycRecords.total_pages > 1 && (
-                  <p>Showing page {kycRecords.page} of {kycRecords.total_pages}; latest submissions are listed first.</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+                    <span>Page {kycRecords.page} of {kycRecords.total_pages} · {kycRecords.total} submissions</span>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button disabled={kycLoading || kycRecords.page <= 1} onClick={() => { setKycRecords(null); setKycPage((current) => current - 1); }}>Previous</button>
+                      <button disabled={kycLoading || kycRecords.page >= kycRecords.total_pages} onClick={() => { setKycRecords(null); setKycPage((current) => current + 1); }}>Next</button>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
@@ -783,10 +816,16 @@ function UsersPage() {
                 {sessions && sessions.length > 0 && (
                   <>
                     <p>{sessions.length} active session{sessions.length === 1 ? '' : 's'}.</p>
-                    <ul>{sessions.map((session, index) => (
-                      <li key={`${session.created_at}-${index}`} style={{ marginBottom: 10 }}>
+                    <ul>{sessions.map((session) => (
+                      <li key={session.session_id} style={{ marginBottom: 10 }}>
                         {session.device_name || session.browser || session.operating_system || 'Unknown device'} · {statusLabel(session.status || 'unknown')}
                         <div><small>Created {formatDate(session.created_at)} · Last active {formatDate(session.last_activity_at)} · Expires {formatDate(session.expires_at)}</small></div>
+                        <button
+                          disabled={revokingSessionId !== null || revokeLoading}
+                          onClick={() => void revokeSession(session)}
+                        >
+                          {revokingSessionId === session.session_id ? 'Revoking…' : 'Revoke session'}
+                        </button>
                       </li>
                     ))}</ul>
                     <button onClick={() => { setRevokeReason(''); setRevokeDialogOpen(true); }}>Revoke all sessions</button>
