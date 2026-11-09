@@ -12,7 +12,7 @@ function Toast({ message, onClose }: ToastProps) {
   }, [onClose]);
 
   return (
-    <div style={{ position: 'fixed', top: 20, right: 20, background: '#111827', color: 'white', padding: '12px 16px', borderRadius: 10, zIndex: 1100 }}>
+    <div className="toast" role="status" aria-live="polite">
       {message}
     </div>
   );

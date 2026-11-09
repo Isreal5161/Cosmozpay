@@ -1,4 +1,4 @@
-import { requestAdminApi } from './adminAuth';
+import { AdminAuthError, requestAdminApi } from './adminAuth';
 
 export type AdminUserStatusAction = 'suspend' | 'activate' | 'block' | 'unblock';
 
@@ -51,6 +51,9 @@ export interface AdminUserList {
 export interface AdminWallet {
   id: string;
   user_id: string;
+  user_name: string | null;
+  user_email: string | null;
+  user_phone: string | null;
   wallet_reference: string | null;
   wallet_type: string;
   currency: string;
@@ -68,8 +71,12 @@ export interface AdminWallet {
 export interface AdminLedgerEntry {
   id: string;
   transaction_reference: string;
+  wallet_id: string;
+  user_id: string;
   transaction_type: string;
   entry_type: string;
+  created_by: string;
+  adjustment_reason: string | null;
   description: string | null;
   status: string;
   currency: string;
@@ -147,6 +154,11 @@ export interface AdminPage<T> {
   total_pages: number;
 }
 
+export interface AdminWalletList extends AdminPage<AdminWallet> {
+  total_wallets: number;
+  currencies: string[];
+}
+
 export interface AdminTransactionQuery {
   page: number;
   page_size: number;
@@ -196,6 +208,9 @@ function parseWallet(value: unknown): AdminWallet {
     !isRecord(value) ||
     typeof value.id !== 'string' ||
     typeof value.user_id !== 'string' ||
+    !isOptionalString(value.user_name) ||
+    !isOptionalString(value.user_email) ||
+    !isOptionalString(value.user_phone) ||
     !isOptionalString(value.wallet_reference) ||
     typeof value.wallet_type !== 'string' ||
     typeof value.currency !== 'string' ||
@@ -217,8 +232,12 @@ function parseLedgerEntry(value: unknown): AdminLedgerEntry {
     !isRecord(value) ||
     typeof value.id !== 'string' ||
     typeof value.transaction_reference !== 'string' ||
+    typeof value.wallet_id !== 'string' ||
+    typeof value.user_id !== 'string' ||
     typeof value.transaction_type !== 'string' ||
     typeof value.entry_type !== 'string' ||
+    typeof value.created_by !== 'string' ||
+    !isOptionalString(value.adjustment_reason) ||
     !isOptionalString(value.description) ||
     typeof value.status !== 'string' ||
     typeof value.currency !== 'string' ||
@@ -406,12 +425,114 @@ export async function manageAdminUser(
   return parseAdminUser(result.user);
 }
 
+export interface AdminWalletListQuery {
+  page: number;
+  page_size: number;
+  search?: string;
+  status?: string;
+  currency?: string;
+}
+
+export async function fetchAdminWallets(query: AdminWalletListQuery): Promise<AdminWalletList> {
+  const params = new URLSearchParams({
+    page: String(query.page),
+    page_size: String(query.page_size),
+  });
+  if (query.search?.trim()) params.set('query', query.search.trim());
+  if (query.status?.trim()) params.set('status', query.status.trim());
+  if (query.currency?.trim()) params.set('currency', query.currency.trim());
+
+  const response = unwrapServiceData(await requestAdminApi(`/admin/wallets?${params.toString()}`));
+  if (
+    !isRecord(response) ||
+    !Array.isArray(response.items) ||
+    !Number.isInteger(response.total_wallets) ||
+    !Array.isArray(response.currencies) ||
+    !response.currencies.every((currency) => typeof currency === 'string')
+  ) {
+    throw new Error('The server returned an invalid wallet list.');
+  }
+
+  const total = Number(response.total ?? 0);
+  const pageSize = Number.isInteger(response.page_size) ? Number(response.page_size) : query.page_size;
+  const page = Number.isInteger(response.page) ? Number(response.page) : query.page;
+  const totalPages = Number.isInteger(response.total_pages)
+    ? Number(response.total_pages)
+    : Math.max(1, Math.ceil(total / Math.max(pageSize, 1)) || 1);
+
+  return {
+    items: response.items.map(parseWallet),
+    page,
+    page_size: pageSize,
+    total,
+    total_pages: totalPages,
+    total_wallets: response.total_wallets as number,
+    currencies: response.currencies as string[],
+  };
+}
+
+export async function fetchAdminWalletById(walletId: string): Promise<AdminWallet> {
+  const response = unwrapServiceData(await requestAdminApi(
+    `/admin/wallets/${encodeURIComponent(walletId)}`,
+  ));
+  return parseWallet(response);
+}
+
 export async function fetchAdminWallet(userId: string): Promise<AdminWallet | null> {
   const response = await requestAdminApi(`/admin/users/${encodeURIComponent(userId)}/wallet`);
   if (!isRecord(response) || !Object.prototype.hasOwnProperty.call(response, 'wallet')) {
     throw new Error('The server returned an invalid wallet response.');
   }
   return response.wallet === null ? null : parseWallet(response.wallet);
+}
+
+export async function adjustAdminWallet(payload: {
+  user_id: string;
+  wallet_id: string;
+  amount: string;
+  currency: string;
+  reason: string;
+  reference: string;
+}): Promise<Record<string, unknown>> {
+  try {
+    const response = await requestAdminApi('/admin/wallets/adjust', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }, { retryOnUnauthorized: false });
+    if (
+      !isRecord(response) ||
+      response.success !== true ||
+      !isRecord(response.data) ||
+      !isRecord(response.data.result) ||
+      response.data.result.status !== 'success' ||
+      response.data.reference !== payload.reference ||
+      response.data.operation !== (payload.amount.startsWith('-') ? 'manual_debit' : 'manual_credit') ||
+      typeof response.data.idempotent !== 'boolean'
+    ) {
+      throw new AdminWalletAdjustmentError(
+        'The server response did not confirm this adjustment. Its outcome is uncertain.',
+        true,
+      );
+    }
+    return response.data;
+  } catch (error) {
+    if (error instanceof AdminWalletAdjustmentError) throw error;
+    const outcomeUnknown = !(error instanceof AdminAuthError) ||
+      error.status === undefined ||
+      error.status >= 500;
+    throw new AdminWalletAdjustmentError(
+      error instanceof Error ? error.message : 'The adjustment outcome is uncertain.',
+      outcomeUnknown,
+    );
+  }
+}
+
+export class AdminWalletAdjustmentError extends Error {
+  constructor(message: string, readonly outcomeUnknown: boolean) {
+    super(message);
+    this.name = 'AdminWalletAdjustmentError';
+  }
 }
 
 export async function fetchAdminWalletLedger(
@@ -425,6 +546,34 @@ export async function fetchAdminWalletLedger(
     `/admin/users/${encodeURIComponent(userId)}/wallets/${encodeURIComponent(walletId)}/ledger?${params.toString()}`,
   ));
   return parsePage(response, parseLedgerEntry, 'The server returned an invalid wallet ledger.');
+}
+
+export interface AdminWalletLedgerReferenceLookup {
+  total: number;
+  items: AdminLedgerEntry[];
+}
+
+export async function fetchAdminWalletLedgerByReference(
+  userId: string,
+  walletId: string,
+  transactionReference: string,
+): Promise<AdminWalletLedgerReferenceLookup> {
+  const params = new URLSearchParams({ transaction_reference: transactionReference });
+  const response = unwrapServiceData(await requestAdminApi(
+    `/admin/users/${encodeURIComponent(userId)}/wallets/${encodeURIComponent(walletId)}/ledger/reference?${params.toString()}`,
+  ));
+  if (
+    !isRecord(response) ||
+    !Number.isInteger(response.total) ||
+    !Array.isArray(response.items) ||
+    response.items.length > 2
+  ) {
+    throw new Error('The server returned an invalid wallet ledger reference lookup.');
+  }
+  return {
+    total: response.total as number,
+    items: response.items.map(parseLedgerEntry),
+  };
 }
 
 export async function fetchAdminUserTransactions(

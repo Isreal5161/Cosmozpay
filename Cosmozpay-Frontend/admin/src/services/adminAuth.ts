@@ -49,7 +49,12 @@ export class AdminAuthError extends Error {
 }
 
 let inMemoryTokens: AdminTokens | null = null;
-let refreshInFlight: Promise<void> | null = null;
+let sessionGeneration = 0;
+let refreshInFlight: {
+  generation: number;
+  refreshToken: string;
+  promise: Promise<void>;
+} | null = null;
 let sessionInvalidationHandler: (() => void) | null = null;
 
 function apiUrl(path: string): string {
@@ -177,7 +182,11 @@ function envelopeData<T>(body: unknown, fallback: string): T {
   return body.data as T;
 }
 
-function updateTokens(data: TokenResponse): void {
+function updateTokens(
+  data: TokenResponse,
+  expectedGeneration?: number,
+  expectedRefreshToken?: string,
+): void {
   if (
     typeof data.access_token !== 'string' ||
     !data.access_token ||
@@ -187,6 +196,14 @@ function updateTokens(data: TokenResponse): void {
     data.token_type.toLowerCase() !== 'bearer'
   ) {
     throw new AdminAuthError('The server returned an invalid authentication response.');
+  }
+
+  if (
+    expectedGeneration !== undefined &&
+    (sessionGeneration !== expectedGeneration ||
+      (expectedRefreshToken !== undefined && inMemoryTokens?.refreshToken !== expectedRefreshToken))
+  ) {
+    throw new AdminAuthError('Your session changed while authentication was in progress. Please try again.');
   }
 
   inMemoryTokens = {
@@ -199,7 +216,8 @@ function updateTokens(data: TokenResponse): void {
   };
 }
 
-function notifySessionInvalidated(): void {
+function notifySessionInvalidated(expectedGeneration?: number): void {
+  if (expectedGeneration !== undefined && sessionGeneration !== expectedGeneration) return;
   clearAdminSession();
   sessionInvalidationHandler?.();
 }
@@ -209,7 +227,9 @@ export function hasAdminSession(): boolean {
 }
 
 export function clearAdminSession(): void {
+  sessionGeneration += 1;
   inMemoryTokens = null;
+  refreshInFlight = null;
 }
 
 export function registerSessionInvalidationHandler(handler: (() => void) | null): void {
@@ -220,6 +240,7 @@ export async function loginAdmin(
   credentials: AdminLoginCredentials,
 ): Promise<AdminLoginResult> {
   clearAdminSession();
+  const generation = sessionGeneration;
   const { body } = await sendJson('/auth/admin/login', {
     login_identifier: credentials.identifier.trim(),
     password: credentials.password,
@@ -229,6 +250,10 @@ export async function loginAdmin(
     'The server returned an invalid login response.',
   );
 
+  if (sessionGeneration !== generation) {
+    throw new AdminAuthError('Your session changed while login was in progress. Please try again.');
+  }
+
   if (data.requires_mfa === true) {
     if (typeof data.reference_id !== 'string' || !data.reference_id) {
       throw new AdminAuthError('The server returned an invalid verification challenge.');
@@ -236,7 +261,7 @@ export async function loginAdmin(
     return { requiresMfa: true, referenceId: data.reference_id };
   }
 
-  updateTokens(data as TokenResponse);
+  updateTokens(data as TokenResponse, generation);
   return { requiresMfa: false };
 }
 
@@ -244,6 +269,7 @@ export async function verifyAdminMfa(
   referenceId: string,
   otpCode: string,
 ): Promise<void> {
+  const generation = sessionGeneration;
   const { body } = await sendJson('/auth/admin/verify-mfa', {
     reference_id: referenceId,
     otp_code: otpCode,
@@ -252,16 +278,10 @@ export async function verifyAdminMfa(
     body,
     'The server returned an invalid verification response.',
   );
-  updateTokens(data as TokenResponse);
+  updateTokens(data as TokenResponse, generation);
 }
 
-async function performRefresh(): Promise<void> {
-  const refreshToken = inMemoryTokens?.refreshToken;
-  if (!refreshToken) {
-    notifySessionInvalidated();
-    throw new AdminAuthError('Your session has expired. Please sign in again.');
-  }
-
+async function performRefresh(generation: number, refreshToken: string): Promise<void> {
   try {
     const { body } = await sendJson(
       '/auth/admin/refresh',
@@ -272,28 +292,53 @@ async function performRefresh(): Promise<void> {
       body,
       'Your session has expired. Please sign in again.',
     );
-    updateTokens(data as TokenResponse);
+    updateTokens(data as TokenResponse, generation, refreshToken);
   } catch {
-    notifySessionInvalidated();
+    if (
+      sessionGeneration !== generation ||
+      inMemoryTokens?.refreshToken !== refreshToken
+    ) {
+      return;
+    }
+    notifySessionInvalidated(generation);
     throw new AdminAuthError('Your session has expired. Please sign in again.');
   }
 }
 
 export async function refreshAdminSession(): Promise<void> {
-  if (!refreshInFlight) {
-    const refresh = performRefresh();
-    refreshInFlight = refresh;
+  const session = inMemoryTokens;
+  const generation = sessionGeneration;
+  if (!session) {
+    notifySessionInvalidated(generation);
+    throw new AdminAuthError('Your session has expired. Please sign in again.');
   }
-  const activeRefresh = refreshInFlight;
+
+  let activeRefresh = refreshInFlight;
+  if (
+    !activeRefresh ||
+    activeRefresh.generation !== generation ||
+    activeRefresh.refreshToken !== session.refreshToken
+  ) {
+    activeRefresh = {
+      generation,
+      refreshToken: session.refreshToken,
+      promise: performRefresh(generation, session.refreshToken),
+    };
+    refreshInFlight = activeRefresh;
+  }
+
   try {
-    await activeRefresh;
+    await activeRefresh.promise;
   } finally {
     if (refreshInFlight === activeRefresh) refreshInFlight = null;
   }
 }
 
-async function accessTokenAfterUnauthorized(usedAccessToken: string): Promise<string> {
-  if (!inMemoryTokens) {
+async function accessTokenAfterUnauthorized(
+  usedAccessToken: string,
+  expectedGeneration: number,
+): Promise<string> {
+  if (sessionGeneration !== expectedGeneration || !inMemoryTokens) {
     throw new AdminAuthError('Your session has expired. Please sign in again.', 401);
   }
 
@@ -301,6 +346,9 @@ async function accessTokenAfterUnauthorized(usedAccessToken: string): Promise<st
     await refreshAdminSession();
   }
 
+  if (sessionGeneration !== expectedGeneration) {
+    throw new AdminAuthError('Your session has expired. Please sign in again.', 401);
+  }
   const currentAccessToken = inMemoryTokens?.accessToken;
   if (!currentAccessToken) {
     throw new AdminAuthError('Your session has expired. Please sign in again.', 401);
@@ -312,6 +360,7 @@ async function authenticatedGet(
   path: string,
   fallback: string,
 ): Promise<unknown> {
+  const generation = sessionGeneration;
   if (!inMemoryTokens) {
     throw new AdminAuthError('Your session has expired. Please sign in again.', 401);
   }
@@ -320,6 +369,9 @@ async function authenticatedGet(
     await refreshAdminSession();
   }
 
+  if (sessionGeneration !== generation) {
+    throw new AdminAuthError('Your session has expired. Please sign in again.', 401);
+  }
   const accessToken = inMemoryTokens?.accessToken;
   if (!accessToken) {
     throw new AdminAuthError('Your session has expired. Please sign in again.', 401);
@@ -330,12 +382,12 @@ async function authenticatedGet(
     result = await sendGet(path, accessToken, fallback);
   } catch (error) {
     if (!(error instanceof AdminAuthError) || error.status !== 401) throw error;
-    const retryAccessToken = await accessTokenAfterUnauthorized(accessToken);
+    const retryAccessToken = await accessTokenAfterUnauthorized(accessToken, generation);
     try {
       result = await sendGet(path, retryAccessToken, fallback);
     } catch (retryError) {
       if (retryError instanceof AdminAuthError && retryError.status === 401) {
-        notifySessionInvalidated();
+        notifySessionInvalidated(generation);
       }
       throw retryError;
     }
@@ -345,11 +397,16 @@ async function authenticatedGet(
 }
 
 export async function getCurrentAdmin(): Promise<AdminProfile> {
+  const generation = sessionGeneration;
   try {
     const data = await authenticatedGet(
       '/admin/me',
       'Your Admin session is no longer valid. Please sign in again.',
     );
+    if (sessionGeneration !== generation) {
+      if (inMemoryTokens) return getCurrentAdmin();
+      throw new AdminAuthError('Your Admin session is no longer valid. Please sign in again.', 401);
+    }
     const normalizedRole = isRecord(data) && typeof data.role === 'string'
       ? data.role.trim().toLowerCase().replace(/ /g, '_')
       : '';
@@ -366,14 +423,23 @@ export async function getCurrentAdmin(): Promise<AdminProfile> {
     }
     return data as AdminProfile;
   } catch (error) {
+    if (sessionGeneration !== generation) {
+      if (inMemoryTokens) return getCurrentAdmin();
+      throw new AdminAuthError('Your Admin session is no longer valid. Please sign in again.', 401);
+    }
     if (error instanceof AdminAuthError && (error.status === 401 || error.status === 403)) {
-      notifySessionInvalidated();
+      notifySessionInvalidated(generation);
     }
     throw error;
   }
 }
 
-export async function requestAdminApi(path: string, init: RequestInit = {}): Promise<unknown> {
+export async function requestAdminApi(
+  path: string,
+  init: RequestInit = {},
+  options: { retryOnUnauthorized?: boolean } = {},
+): Promise<unknown> {
+  const generation = sessionGeneration;
   if (!inMemoryTokens) {
     throw new AdminAuthError('Your session has expired. Please sign in again.', 401);
   }
@@ -382,6 +448,9 @@ export async function requestAdminApi(path: string, init: RequestInit = {}): Pro
     await refreshAdminSession();
   }
 
+  if (sessionGeneration !== generation) {
+    throw new AdminAuthError('Your session has expired. Please sign in again.', 401);
+  }
   const request = async (accessToken: string) => {
     try {
       const headers = new Headers(init.headers);
@@ -400,14 +469,14 @@ export async function requestAdminApi(path: string, init: RequestInit = {}): Pro
     throw new AdminAuthError('Your session has expired. Please sign in again.', 401);
   }
   let response = await request(accessToken);
-  if (response.status === 401) {
-    const retryAccessToken = await accessTokenAfterUnauthorized(accessToken);
+  if (response.status === 401 && options.retryOnUnauthorized !== false) {
+    const retryAccessToken = await accessTokenAfterUnauthorized(accessToken, generation);
     response = await request(retryAccessToken);
   }
 
   const body = await readJson(response);
   if (!response.ok) {
-    if (response.status === 401) notifySessionInvalidated();
+    if (response.status === 401) notifySessionInvalidated(generation);
     throw new AdminAuthError(
       normalizeErrorMessage(response, body, 'The request could not be completed.'),
       response.status,
@@ -421,21 +490,17 @@ export async function requestAdminApi(path: string, init: RequestInit = {}): Pro
 
 export async function logoutAdmin(): Promise<void> {
   const tokens = inMemoryTokens;
+  clearAdminSession();
   if (!tokens) {
-    clearAdminSession();
     return;
   }
 
-  try {
-    await sendJson(
-      '/auth/admin/logout',
-      { refresh_token: tokens.refreshToken },
-      {
-        fallback: 'Unable to complete sign out.',
-        accessToken: tokens.accessToken,
-      },
-    );
-  } finally {
-    clearAdminSession();
-  }
+  await sendJson(
+    '/auth/admin/logout',
+    { refresh_token: tokens.refreshToken },
+    {
+      fallback: 'Unable to complete sign out.',
+      accessToken: tokens.accessToken,
+    },
+  );
 }

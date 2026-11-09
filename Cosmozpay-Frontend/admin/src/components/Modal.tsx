@@ -4,18 +4,27 @@ interface ModalProps {
   open: boolean;
   title: string;
   onClose: () => void;
+  closeDisabled?: boolean;
   children: ReactNode;
 }
 
-function Modal({ open, title, onClose, children }: ModalProps) {
+function Modal({ open, title, onClose, closeDisabled = false, children }: ModalProps) {
   if (!open) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(17, 24, 39, 0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 760, maxHeight: '90vh', overflow: 'auto', padding: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 style={{ margin: 0 }}>{title}</h3>
-          <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 18 }}>×</button>
+    <div className="modal-overlay">
+      <div className="modal-dialog" role="dialog" aria-modal="true" aria-label={title}>
+        <div className="modal-header">
+          <h3>{title}</h3>
+          <button
+            type="button"
+            className="modal-close"
+            onClick={onClose}
+            disabled={closeDisabled}
+            aria-label="Close dialog"
+          >
+            ×
+          </button>
         </div>
         {children}
       </div>
