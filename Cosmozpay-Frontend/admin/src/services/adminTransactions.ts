@@ -56,6 +56,38 @@ export interface AdminTransactionDetail extends AdminTransaction {
   ledger_entries: AdminTransactionLedgerEntry[];
 }
 
+export interface AdminPayment extends AdminTransaction {
+  payment_type: string;
+  method: string | null;
+}
+
+export interface AdminPaymentDetail extends AdminTransactionDetail {
+  payment_type: string;
+  method: string | null;
+  recipient: AdminTransactionUser | null;
+}
+
+export interface AdminPaymentQuery {
+  page: number;
+  page_size: number;
+  payment_category?: 'wallet_funding' | 'payment' | 'transfer' | 'bank_payout';
+  status?: string;
+  method?: string;
+  search?: string;
+  start_date?: string;
+  end_date?: string;
+  descending?: boolean;
+}
+
+export interface AdminPaymentPage {
+  items: AdminPayment[];
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+  summary: AdminTransactionSummary;
+}
+
 export interface AdminTransactionTimelineEvent {
   at: string | null;
   event: string;
@@ -242,8 +274,60 @@ export async function fetchAdminTransactions(query: AdminTransactionQuery): Prom
   return { ...response, summary: summary as unknown as AdminTransactionSummary };
 }
 
+export async function fetchAdminPayments(query: AdminPaymentQuery): Promise<AdminPaymentPage> {
+  const params = new URLSearchParams({
+    page: String(query.page),
+    page_size: String(query.page_size),
+  });
+  for (const key of ['payment_category', 'status', 'method', 'search', 'start_date', 'end_date'] as const) {
+    const value = query[key]?.trim();
+    if (value) params.set(key, value);
+  }
+  if (typeof query.descending === 'boolean') params.set('descending', String(query.descending));
+  const raw = await requestAdminApi(`/admin/payments?${params.toString()}`);
+  const response = parsePage(raw, parsePayment);
+  const data = unwrap(raw);
+  if (!isRecord(data) || !isRecord(data.summary)) {
+    throw new Error('The server returned invalid payment summary data.');
+  }
+  const summary = data.summary;
+  for (const key of ['total', 'successful', 'pending', 'failed'] as const) {
+    if (!Number.isInteger(summary[key])) throw new Error('The server returned invalid payment summary data.');
+  }
+  return { ...response, summary: summary as unknown as AdminTransactionSummary };
+}
+
+function parsePayment(value: unknown): AdminPayment {
+  if (!isRecord(value) || typeof value.payment_type !== 'string') {
+    throw new Error('The server returned an invalid payment record.');
+  }
+  return {
+    ...parseTransaction(value),
+    payment_type: value.payment_type,
+    method: typeof value.method === 'string' ? value.method : null,
+  };
+}
+
 export async function fetchAdminTransactionDetails(transactionId: string): Promise<AdminTransactionDetail> {
   const raw = unwrap(await requestAdminApi(`/admin/transactions/${encodeURIComponent(transactionId)}`));
+  return parseTransactionDetail(raw);
+}
+
+export async function fetchAdminPaymentDetails(transactionId: string): Promise<AdminPaymentDetail> {
+  const raw = unwrap(await requestAdminApi(`/admin/payments/${encodeURIComponent(transactionId)}`));
+  if (!isRecord(raw) || typeof raw.payment_type !== 'string') {
+    throw new Error('The server returned invalid payment detail data.');
+  }
+  const base = parseTransactionDetail(raw);
+  return {
+    ...base,
+    payment_type: raw.payment_type,
+    method: typeof raw.method === 'string' ? raw.method : null,
+    recipient: parseUser(raw.recipient),
+  };
+}
+
+function parseTransactionDetail(raw: unknown): AdminTransactionDetail {
   if (!isRecord(raw) || !Array.isArray(raw.ledger_entries) || !isRecord(raw.metadata)) {
     throw new Error('The server returned invalid transaction detail data.');
   }

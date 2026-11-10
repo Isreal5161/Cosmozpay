@@ -409,6 +409,29 @@ button:disabled {
   min-width: 0;
 }
 
+.payments-page .payments-filters {
+  grid-template-columns: minmax(230px, 2fr) repeat(3, minmax(145px, 1fr)) repeat(2, minmax(135px, 1fr)) auto;
+}
+
+.payments-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+  color: var(--admin-text-muted);
+  font-size: 13px;
+}
+
+.payments-pagination > div {
+  display: flex;
+  gap: 8px;
+}
+
+.payments-table {
+  min-width: 1080px;
+}
+
 .transactions-heading {
   display: flex;
   justify-content: space-between;
@@ -839,6 +862,10 @@ button:disabled {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .payments-page .payments-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .transactions-filter-search {
     grid-column: 1 / -1;
   }
@@ -850,6 +877,11 @@ button:disabled {
 
   .transactions-detail-row {
     grid-template-columns: minmax(110px, 0.6fr) minmax(0, 1fr) auto;
+  }
+
+  .payments-pagination {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 
@@ -872,6 +904,10 @@ button:disabled {
   }
 
   .transactions-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .payments-page .payments-filters {
     grid-template-columns: minmax(0, 1fr);
   }
 
