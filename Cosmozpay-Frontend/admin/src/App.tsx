@@ -7,6 +7,7 @@ import WalletPage from './pages/WalletPage';
 import TransactionsPage from './pages/TransactionsPage';
 import PaymentsPage from './pages/PaymentsPage';
 import FinancePage from './pages/FinancePage';
+import ProviderCostsPage from './pages/ProviderCostsPage';
 import KycPage from './pages/KycPage';
 import FraudPage from './pages/FraudPage';
 import SupportPage from './pages/SupportPage';
@@ -97,6 +98,7 @@ function DashboardShell() {
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/payments" element={<PaymentsPage />} />
           <Route path="/finance" element={<FinancePage />} />
+          <Route path="/provider-costs" element={<ProviderCostsPage />} />
           <Route path="/kyc" element={<KycPage />} />
           <Route path="/fraud" element={<FraudPage />} />
           <Route path="/support" element={<SupportPage />} />

@@ -7,15 +7,6 @@ export const mockData = {
   wallets: [] as MockRow[],
   transactions: [] as TransactionRecord[],
   payments: [] as MockRow[],
-  finance: {
-    companyEarnings: 0,
-    feesCollected: 0,
-    commissionsReceived: 0,
-    profit: 0,
-    taxes: 0,
-    payoutScheduled: 0,
-    reports: [] as MockRow[],
-  },
   kyc: [] as KycRecord[],
   fraud: {
     suspiciousTransactions: [] as MockRow[],

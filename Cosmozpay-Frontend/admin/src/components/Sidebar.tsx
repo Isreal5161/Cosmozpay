@@ -8,6 +8,7 @@ const links = [
   { to: '/transactions', label: 'Transactions' },
   { to: '/payments', label: 'Payments' },
   { to: '/finance', label: 'Finance' },
+  { to: '/provider-costs', label: 'Provider Costs' },
   { to: '/kyc', label: 'KYC' },
   { to: '/fraud', label: 'Fraud' },
   { to: '/support', label: 'Support' },
