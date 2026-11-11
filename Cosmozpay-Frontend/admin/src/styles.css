@@ -1144,6 +1144,263 @@ button:disabled {
   gap: 18px;
 }
 
+.kyc-page {
+  display: grid;
+  gap: 18px;
+}
+
+.kyc-page .panel {
+  margin-bottom: 0;
+}
+
+.kyc-heading,
+.kyc-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.kyc-heading .page-heading {
+  margin-bottom: 4px;
+}
+
+.kyc-heading p {
+  margin: 0;
+  color: var(--admin-text-muted);
+}
+
+.kyc-heading > button,
+.kyc-pagination button,
+.kyc-view-button,
+.kyc-clear-filters,
+.kyc-detail-actions button,
+.kyc-review-form > button {
+  padding: 8px 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  cursor: pointer;
+  font: inherit;
+}
+
+.kyc-heading > button:disabled,
+.kyc-pagination button:disabled,
+.kyc-clear-filters:disabled,
+.kyc-detail-actions button:disabled,
+.kyc-review-form > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.kyc-toolbar {
+  display: grid;
+  grid-template-columns: minmax(240px, 2fr) repeat(2, minmax(150px, 1fr)) auto;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.kyc-toolbar label,
+.kyc-review-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--admin-text-muted);
+  font-size: 12px;
+}
+
+.kyc-toolbar input,
+.kyc-toolbar select,
+.kyc-review-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-input-bg);
+  color: var(--admin-text);
+  font: inherit;
+}
+
+.kyc-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 14px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.kyc-error button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.kyc-state {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 36px 16px;
+  color: var(--admin-text-muted);
+  text-align: center;
+}
+
+.kyc-state strong {
+  color: var(--admin-text-strong);
+}
+
+.kyc-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.kyc-table {
+  min-width: 900px;
+}
+
+.kyc-table td > strong,
+.kyc-table td > span,
+.kyc-table td > small {
+  display: block;
+}
+
+.kyc-table td > span,
+.kyc-table td > small {
+  margin-top: 4px;
+  color: var(--admin-text-muted);
+  font-size: 12px;
+}
+
+.kyc-table code,
+.kyc-detail code,
+.kyc-review-form code {
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+
+.kyc-status {
+  display: inline-flex !important;
+  width: fit-content;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569 !important;
+  font-size: 12px !important;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.kyc-status-pending,
+.kyc-status-reviewing {
+  background: #fef3c7;
+  color: #92400e !important;
+}
+
+.kyc-status-approved {
+  background: #dcfce7;
+  color: #166534 !important;
+}
+
+.kyc-status-rejected,
+.kyc-status-expired {
+  background: #fee2e2;
+  color: #991b1b !important;
+}
+
+.kyc-pagination {
+  margin-top: 16px;
+  color: var(--admin-text-muted);
+  font-size: 13px;
+}
+
+.kyc-pagination > div,
+.kyc-detail-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.kyc-view-button {
+  color: var(--admin-focus);
+}
+
+.kyc-detail {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.kyc-detail section {
+  padding: 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  background: var(--admin-surface-muted);
+}
+
+.kyc-detail h4 {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 12px;
+  color: var(--admin-text-strong);
+}
+
+.kyc-detail h4 small {
+  color: var(--admin-text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.kyc-detail p {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+
+.kyc-reject-button {
+  color: #b91c1c !important;
+}
+
+.kyc-review-form {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.kyc-review-form p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.kyc-review-form textarea {
+  resize: vertical;
+}
+
+@media (max-width: 900px) {
+  .kyc-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .kyc-heading,
+  .kyc-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .kyc-toolbar {
+    grid-template-columns: 1fr;
+  }
+}
+
 .provider-cost-page .panel {
   margin-bottom: 0;
 }

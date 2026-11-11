@@ -120,6 +120,22 @@ export interface AdminKycRecord {
   created_at: string | null;
 }
 
+export interface AdminGlobalKycRecord extends AdminKycRecord {
+  user_id: string;
+  user_first_name: string | null;
+  user_last_name: string | null;
+  user_email: string;
+  user_phone: string | null;
+}
+
+export interface AdminKycListQuery {
+  page: number;
+  page_size: number;
+  search?: string;
+  status?: string;
+  document_type?: string;
+}
+
 export interface AdminActivityEvent {
   id: string;
   action: string;
@@ -289,6 +305,26 @@ function parseKycRecord(value: unknown): AdminKycRecord {
     !isOptionalString(value.created_at)
   ) throw new Error('The server returned an invalid KYC record.');
   return value as unknown as AdminKycRecord;
+}
+
+function parseGlobalKycRecord(value: unknown): AdminGlobalKycRecord {
+  if (
+    !isRecord(value) ||
+    typeof value.user_id !== 'string' ||
+    !isOptionalString(value.user_first_name) ||
+    !isOptionalString(value.user_last_name) ||
+    typeof value.user_email !== 'string' ||
+    !isOptionalString(value.user_phone)
+  ) throw new Error('The server returned an invalid admin KYC record.');
+  const record = parseKycRecord(value);
+  return {
+    ...record,
+    user_id: value.user_id,
+    user_first_name: value.user_first_name,
+    user_last_name: value.user_last_name,
+    user_email: value.user_email,
+    user_phone: value.user_phone,
+  };
 }
 
 function parseActivity(value: unknown): AdminActivityEvent {
@@ -611,8 +647,25 @@ export async function fetchAdminUserKyc(
   pageSize = 20,
 ): Promise<AdminPage<AdminKycRecord>> {
   const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
-  const response = await requestAdminApi(`/admin/users/${encodeURIComponent(userId)}/kyc?${params.toString()}`);
+  const response = unwrapServiceData(
+    await requestAdminApi(`/admin/users/${encodeURIComponent(userId)}/kyc?${params.toString()}`),
+  );
   return parsePage(response, parseKycRecord, 'The server returned an invalid KYC response.');
+}
+
+export async function fetchAdminKyc(
+  query: AdminKycListQuery,
+): Promise<AdminPage<AdminGlobalKycRecord>> {
+  const params = new URLSearchParams({
+    page: String(query.page),
+    page_size: String(query.page_size),
+  });
+  if (query.search?.trim()) params.set('search', query.search.trim());
+  if (query.status) params.set('status', query.status);
+  if (query.document_type) params.set('document_type', query.document_type);
+
+  const response = unwrapServiceData(await requestAdminApi(`/admin/kyc?${params.toString()}`));
+  return parsePage(response, parseGlobalKycRecord, 'The server returned an invalid admin KYC response.');
 }
 
 export async function reviewAdminUserKyc(
@@ -629,7 +682,7 @@ export async function reviewAdminUserKyc(
       body: JSON.stringify({ approval_status: approvalStatus, review_notes: reviewNotes.trim() }),
     },
   ));
-  return parseKycRecord(response);
+  return parseKycRecord(unwrapServiceData(response));
 }
 
 export async function fetchAdminUserActivity(
